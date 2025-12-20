@@ -1,0 +1,67 @@
+.page {
+  min-height: 100vh;
+  background: #f6f7f9;
+  padding: 32rpx;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-bottom: 32rpx;
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28rpx;
+}
+
+.label {
+  width: 120rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.radio-group {
+  display: flex;
+}
+
+.radio {
+  margin-right: 32rpx;
+  font-size: 28rpx;
+}
+
+.input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.input-wrap input {
+  flex: 1;
+  font-size: 28rpx;
+  padding: 8rpx 0;
+}
+
+.unit {
+  font-size: 24rpx;
+  color: #888;
+  margin-left: 12rpx;
+}
+
+.btn {
+  margin-top: 48rpx;
+  background: #007aff;
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+}

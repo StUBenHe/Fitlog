@@ -1,0 +1,92 @@
+/* pages/calendar/index.wxss */
+/* 页面背景 */
+.page {
+  min-height: 100vh;
+  background: #f5f6f8;
+  padding: 32rpx;
+  box-sizing: border-box;
+}
+
+/* swiper 占满高度 */
+.swiper {
+  height: 100vh;
+}
+
+
+/* 一天一张卡 */
+.card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.08);
+}
+
+/* 日期区 */
+.date {
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.day {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #111;
+}
+
+.weekday {
+  font-size: 24rpx;
+  color: #888;
+}
+
+/* 模块整体 */
+.modules {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 单个模块卡 */
+.module {
+  border-radius: 20rpx;
+  padding: 24rpx;
+  background: #f9fafb;
+}
+
+/* 饮食 / 训练区分一点点颜色 */
+.module.diet {
+  background: #fff7ed;
+}
+
+.module.workout {
+  background: #eef2ff;
+}
+
+/* 模块标题 */
+.module-header {
+  margin-bottom: 12rpx;
+}
+
+.module-title {
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+/* 模块内容 */
+.module-content {
+  font-size: 26rpx;
+}
+
+.placeholder {
+  color: #999;
+}
+
+.value {
+  color: #333;
+}
+
+.sub {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #666;
+}
