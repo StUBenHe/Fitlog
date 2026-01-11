@@ -1,0 +1,129 @@
+<view class="container">
+
+<!-- 顶部栏（仅清单界面显示） -->
+<view wx:if="{{step === 0}}" class="bottom-back">
+  <text class="back-btn" bindtap="onPageBack">← 保存</text>
+  <text class="top-title">返回</text>
+</view>
+
+<!-- ✅ 永远显示的加号 -->
+<view class="add-btn" bindtap="onAddClick">
+  ＋ 添加食物
+</view>
+
+<!-- 第一层：分类（用你原来的 panel 包起来，避免样式丢失） -->
+<view wx:if="{{step === 1}}" class="panel">
+  <view class="panel-header">
+    <text class="back" bindtap="onBack">← 返回</text>
+    <text class="title">选择分类</text>
+  </view>
+
+  <view class="category-grid">
+    <view
+      wx:for="{{foodCategories}}"
+      wx:key="id"
+      class="category-item"
+      bindtap="onCategoryClick"
+      data-category="{{item}}"
+    >
+      {{item.name}}
+    </view>
+  </view>
+</view>
+
+<!-- 第二层：食物 -->
+<view wx:if="{{step === 2}}" class="panel">
+  <view class="panel-header">
+    <text class="back" bindtap="onBack">← 返回</text>
+    <text class="title">{{currentCategory.name}}</text>
+  </view>
+
+  <view class="item-grid">
+    <view
+      wx:for="{{currentCategory.items}}"
+      wx:key="id"
+      class="item"
+      bindtap="onItemClick"
+      data-item="{{item}}"
+    >
+      {{item.name}}
+    </view>
+  </view>
+</view>
+
+<!-- 第三层：数量 -->
+<view wx:if="{{step === 3}}" class="amount-panel">
+
+  <view class="food-name">
+    {{currentItem.name}}
+  </view>
+
+  <!-- 份量备注 -->
+  <view wx:if="{{currentItem.displayNote}}" class="note">
+    {{currentItem.displayNote}}
+  </view>
+
+  <view class="stepper">
+    <view class="btn" bindtap="onMinus">−</view>
+    <view class="amount">
+      {{amount}} {{currentItem.unit}}
+    </view>
+    <view class="btn" bindtap="onPlus">＋</view>
+  </view>
+
+  <!-- 热量 -->
+  <view class="kcal">
+    🔥热量≈ {{kcal}} kcal
+  </view>
+
+  <!-- 蛋白质 -->
+  <view class="protein">
+    💪 蛋白质 ≈ {{protein}} g
+  </view>
+
+  <view class="confirm-btn" bindtap="onConfirm">
+    确认添加
+  </view>
+
+  <!-- step 3 也提供返回（如果你原来依赖它） -->
+  <view class="back-inline" bindtap="onBack">
+    ← 返回
+  </view>
+
+
+</view>
+
+<!-- 已添加的饮食列表（清单界面显示） -->
+<view class="diet-list" wx:if="{{step === 0 && dietEntries.length > 0}}">
+
+  <view class="diet-header">
+    <text>食物</text>
+    <text>数量</text>
+    <text>热量</text>
+    <text>蛋白质</text>
+  </view>
+
+  <view
+    class="diet-row"
+    wx:for="{{dietEntries}}"
+    wx:key="id"
+  >
+    <text>{{item.name}}</text>
+    <text>{{item.amount}} {{item.unit}}</text>
+    <text>{{item.kcal}} kcal</text>
+    <text>{{item.protein}} g</text>
+  </view>
+
+  <view class="diet-total">
+  <view class="total-row">
+    总热量：{{totalKcal}} kcal
+  </view>
+  <view class="total-row">
+    蛋白质：{{totalProtein}} g
+  </view>
+</view>
+
+
+</view>
+
+</view>
