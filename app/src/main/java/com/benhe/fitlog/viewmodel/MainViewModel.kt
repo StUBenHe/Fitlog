@@ -9,10 +9,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import com.benhe.fitlog.model.DailyActivity       // ✅ 必须导入
+import com.benhe.fitlog.model.LifeIntensity
+
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    private val db = AppDatabase.getDatabase(application)
     private val dietDao = AppDatabase.getDatabase(application).dietDao()
-
+    private val dailyActivityDao = db.dailyActivityDao()
     // ✅ 修改后的保存方法，包含所有必要字段
     fun saveDietRecord(
         foodName: String,
@@ -60,6 +64,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteDietRecord(record: DietRecord) {
         viewModelScope.launch(Dispatchers.IO) {
             dietDao.deleteRecord(record)
+        }
+    }
+
+    // MainViewModel.kt 里面添加：
+
+    fun getActivityForDate(date: String): Flow<DailyActivity?> {
+        return dailyActivityDao.getActivityByDate(date)
+    }
+
+    fun updateActivityForDate(date: String, sleep: Float, intensity: LifeIntensity) {
+        viewModelScope.launch {
+            val record = DailyActivity(date = date, sleepHours = sleep, intensity = intensity)
+            dailyActivityDao.insertOrUpdateActivity(record)
         }
     }
 

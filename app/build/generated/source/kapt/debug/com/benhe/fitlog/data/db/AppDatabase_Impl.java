@@ -11,6 +11,8 @@ import androidx.room.util.DBUtil;
 import androidx.room.util.TableInfo;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteOpenHelper;
+import com.benhe.fitlog.data.DailyActivityDao;
+import com.benhe.fitlog.data.DailyActivityDao_Impl;
 import java.lang.Class;
 import java.lang.Override;
 import java.lang.String;
@@ -28,20 +30,24 @@ import javax.annotation.processing.Generated;
 public final class AppDatabase_Impl extends AppDatabase {
   private volatile DietDao _dietDao;
 
+  private volatile DailyActivityDao _dailyActivityDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(2) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(3) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `diet_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `foodName` TEXT NOT NULL, `category` TEXT NOT NULL, `quantity` TEXT NOT NULL, `calories` REAL NOT NULL, `protein` REAL NOT NULL, `carbs` REAL NOT NULL, `date` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `daily_activity` (`date` TEXT NOT NULL, `sleepHours` REAL NOT NULL, `intensity` TEXT NOT NULL, PRIMARY KEY(`date`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e83cd36c361ea23de458843c63d7ede3')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e4741afd8525e6f5c2f66d71091c1343')");
       }
 
       @Override
       public void dropAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS `diet_records`");
+        db.execSQL("DROP TABLE IF EXISTS `daily_activity`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -104,9 +110,22 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoDietRecords + "\n"
                   + " Found:\n" + _existingDietRecords);
         }
+        final HashMap<String, TableInfo.Column> _columnsDailyActivity = new HashMap<String, TableInfo.Column>(3);
+        _columnsDailyActivity.put("date", new TableInfo.Column("date", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsDailyActivity.put("sleepHours", new TableInfo.Column("sleepHours", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsDailyActivity.put("intensity", new TableInfo.Column("intensity", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysDailyActivity = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesDailyActivity = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoDailyActivity = new TableInfo("daily_activity", _columnsDailyActivity, _foreignKeysDailyActivity, _indicesDailyActivity);
+        final TableInfo _existingDailyActivity = TableInfo.read(db, "daily_activity");
+        if (!_infoDailyActivity.equals(_existingDailyActivity)) {
+          return new RoomOpenHelper.ValidationResult(false, "daily_activity(com.benhe.fitlog.model.DailyActivity).\n"
+                  + " Expected:\n" + _infoDailyActivity + "\n"
+                  + " Found:\n" + _existingDailyActivity);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "e83cd36c361ea23de458843c63d7ede3", "ef09e96fa8826c056035b369278f01c9");
+    }, "e4741afd8525e6f5c2f66d71091c1343", "6f73c3727ea706f176feebf7b9428e39");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -117,7 +136,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "diet_records");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "diet_records","daily_activity");
   }
 
   @Override
@@ -127,6 +146,7 @@ public final class AppDatabase_Impl extends AppDatabase {
     try {
       super.beginTransaction();
       _db.execSQL("DELETE FROM `diet_records`");
+      _db.execSQL("DELETE FROM `daily_activity`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -142,6 +162,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected Map<Class<?>, List<Class<?>>> getRequiredTypeConverters() {
     final HashMap<Class<?>, List<Class<?>>> _typeConvertersMap = new HashMap<Class<?>, List<Class<?>>>();
     _typeConvertersMap.put(DietDao.class, DietDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(DailyActivityDao.class, DailyActivityDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -170,6 +191,20 @@ public final class AppDatabase_Impl extends AppDatabase {
           _dietDao = new DietDao_Impl(this);
         }
         return _dietDao;
+      }
+    }
+  }
+
+  @Override
+  public DailyActivityDao dailyActivityDao() {
+    if (_dailyActivityDao != null) {
+      return _dailyActivityDao;
+    } else {
+      synchronized(this) {
+        if(_dailyActivityDao == null) {
+          _dailyActivityDao = new DailyActivityDao_Impl(this);
+        }
+        return _dailyActivityDao;
       }
     }
   }
