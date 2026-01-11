@@ -10,7 +10,7 @@ import com.benhe.fitlog.data.db.DietRecord
 
 @Database(
     entities = [DietRecord::class, DailyActivity::class], // ✅ 这里添加了 DailyActivity
-    version = 3, // ✅ 版本号改为 3（必须比之前大）
+    version = 5, // ✅ 版本号改为 3（必须比之前大）
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

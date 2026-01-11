@@ -116,17 +116,21 @@ fun CalendarScreen(viewModel: MainViewModel, onNavigateToDiet: (String) -> Unit,
 
 @Composable
 fun DayCard(date: String, weekday: String, isToday: Boolean, viewModel: MainViewModel, onDietClick: () -> Unit) {
-    // 饮食数据
+    // 1. 获取饮食数据 (略...)
     val totalCalories by viewModel.getTotalCaloriesForDate(date).collectAsState(initial = 0.0)
     val totalProtein by viewModel.getTotalProteinForDate(date).collectAsState(initial = 0.0)
     val totalCarbs by viewModel.getTotalCarbsForDate(date).collectAsState(initial = 0.0)
     val allRecords by viewModel.getDietRecordsForDate(date).collectAsState(initial = emptyList())
     val vitaminCount = allRecords.count { it.category == "维生素" }
 
-    // 每日状态数据 (根据当前卡片的日期获取)
-    val activityData by viewModel.getActivityForDate(date).collectAsState(initial = null)
-    var showActivityDialog by remember { mutableStateOf(false) }
+    // 2. ✅ 获取状态数据 (必须先定义)
+    val activityState = viewModel.getActivityForDate(date).collectAsState(initial = null)
+    val activityData = activityState.value
 
+    // 3. ✅ 计算 TDEE (必须放在 activityData 之后)
+    val tdee = viewModel.getTodayExpenditure(activityData)
+
+    var showActivityDialog by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.95f),
         colors = CardDefaults.cardColors(containerColor = if (isToday) Color(0xFFE0E7FF) else Color(0xFFF3F4F6)),
@@ -136,7 +140,7 @@ fun DayCard(date: String, weekday: String, isToday: Boolean, viewModel: MainView
             modifier = Modifier
                 .padding(20.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()), // 如果内容多，支持滚动
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = weekday, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -159,16 +163,17 @@ fun DayCard(date: String, weekday: String, isToday: Boolean, viewModel: MainView
 
             Spacer(Modifier.height(12.dp))
 
-            // 2. 每日状态模块 (新增的中间框)
+            // 2. 每日状态模块
             ExpandedModuleItem(
                 title = "🏃 状态",
+                // 如果开启了后燃效应，可以在 mainValue 加个小火苗 🔥
                 mainValue = if (activityData != null) "${activityData!!.sleepHours}h" else "待记录",
                 subItems = listOf(
                     "睡眠" to "${activityData?.sleepHours ?: "--"}h",
                     "强度" to (activityData?.intensity?.displayName ?: "未设置"),
-                    "状态" to if ((activityData?.sleepHours ?: 0f) >= 7f) "良好" else "一般"
+                    "估计消耗" to "${tdee} kcal" // ✅ 这里使用了算好的 TDEE
                 ),
-                color = Color(0xFFF0FDF4), // 浅绿色调
+                color = Color(0xFFF0FDF4),
                 onClick = { showActivityDialog = true }
             )
 
@@ -190,15 +195,16 @@ fun DayCard(date: String, weekday: String, isToday: Boolean, viewModel: MainView
         ActivityInputDialog(
             initialSleep = activityData?.sleepHours ?: 8f,
             initialIntensity = activityData?.intensity ?: LifeIntensity.NORMAL,
+            initialAfterburn = activityData?.isAfterburnEnabled ?: false, // ✅ 传入初始开关状态
             onDismiss = { showActivityDialog = false },
-            onConfirm = { sleep, intensity ->
-                viewModel.updateActivityForDate(date, sleep, intensity)
+            onConfirm = { sleep, intensity, afterburn -> // ✅ 增加 afterburn 参数
+                // ✅ 调用包含 4 个参数的更新方法
+                viewModel.updateActivityForDate(date, sleep, intensity, afterburn)
                 showActivityDialog = false
             }
         )
     }
 }
-
 @Composable
 fun ExpandedModuleItem(title: String, mainValue: String, subItems: List<Pair<String, String>>, color: Color, onClick: () -> Unit) {
     Surface(
@@ -222,4 +228,53 @@ fun ExpandedModuleItem(title: String, mainValue: String, subItems: List<Pair<Str
             }
         }
     }
+}
+
+
+// 后燃开关
+@Composable
+fun ActivityInputDialog(
+    initialSleep: Float,
+    initialIntensity: LifeIntensity,
+    initialAfterburn: Boolean, // ✅ 传入初始值
+    onDismiss: () -> Unit,
+    onConfirm: (Float, LifeIntensity, Boolean) -> Unit // ✅ 传出开关结果
+) {
+    var sleep by remember { mutableStateOf(initialSleep) }
+    var intensity by remember { mutableStateOf(initialIntensity) }
+    var afterburn by remember { mutableStateOf(initialAfterburn) } // ✅ 新增状态
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("记录今日状态") },
+        text = {
+            Column {
+                Text("睡眠时间: ${String.format("%.1f", sleep)} 小时")
+                Slider(value = sleep, onValueChange = { sleep = it }, valueRange = 4f..12f)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("生活强度:")
+                // ... (强度选择代码不变) ...
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ✅ 后燃效应开关 UI
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("后燃效应", style = MaterialTheme.typography.bodyLarge)
+                        Text("开启后代谢额外提升10%", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    }
+                    Switch(checked = afterburn, onCheckedChange = { afterburn = it })
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(sleep, intensity, afterburn) }) { Text("确定") }
+        }
+    )
 }
