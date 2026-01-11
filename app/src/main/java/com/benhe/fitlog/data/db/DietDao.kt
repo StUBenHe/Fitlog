@@ -1,6 +1,7 @@
 package com.benhe.fitlog.data.db
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
@@ -18,4 +19,11 @@ interface DietDao {
 
     @Query("SELECT SUM(protein) FROM diet_records WHERE date = :date")
     fun getTotalProteinForDate(date: String): Flow<Double?>
+
+    @Query("SELECT SUM(carbs) FROM diet_records WHERE date = :date")
+    fun getTotalCarbsByDate(date: String): Flow<Double?>
+
+    @Delete
+    suspend fun deleteRecord(record: DietRecord)
+
 }

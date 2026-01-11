@@ -28,6 +28,11 @@ import com.benhe.fitlog.ui.screens.DailyDietListScreen
 import com.benhe.fitlog.ui.theme.FitlogTheme
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
+import com.benhe.fitlog.ui.DietScreen
+
+import androidx.compose.runtime.getValue // 解决 by 报错
+import androidx.compose.runtime.setValue // 解决 by 报错
+import com.benhe.fitlog.data.db.DietRecord // ✅ 必须导入这个，否则不认识 DietRecord
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +45,7 @@ class MainActivity : ComponentActivity() {
                 val sharedPref = remember { context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE) }
                 val hasInit = remember { sharedPref.getBoolean("has_init", false) }
 
+                // 0: Profile, 1: Calendar, 2: DietList, 3: DietSelection(新增)
                 var currentScreen by remember { mutableIntStateOf(if (hasInit) 1 else 0) }
                 var selectedDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
@@ -53,9 +59,15 @@ class MainActivity : ComponentActivity() {
                                 onEditProfile = { currentScreen = 0 }
                             )
                             2 -> DailyDietListScreen(
-                                date = selectedDate, viewModel = viewModel,
-                                onAddClick = { /* 这里可以跳转到 DietScreen */ },
+                                date = selectedDate,
+                                viewModel = viewModel,
+                                onAddClick = { currentScreen = 3 }, // 跳转到新增录入页
                                 onBack = { currentScreen = 1 }
+                            )
+                            3 -> DietScreen(
+                                date = selectedDate,
+                                viewModel = viewModel,
+                                onBack = { currentScreen = 2 } // 录入完或点击返回，回到列表页
                             )
                         }
                     }
@@ -98,27 +110,37 @@ fun CalendarScreen(viewModel: MainViewModel, onNavigateToDiet: (String) -> Unit,
 
 @Composable
 fun DayCard(date: String, weekday: String, isToday: Boolean, viewModel: MainViewModel, onDietClick: () -> Unit) {
-    // 实时观察数据
+    // 1. 实时观察数据（确保增加了 carbs 的监听）
     val totalCalories by viewModel.getTotalCaloriesForDate(date).collectAsState(initial = 0.0)
     val totalProtein by viewModel.getTotalProteinForDate(date).collectAsState(initial = 0.0)
+    val totalCarbs by viewModel.getTotalCarbsForDate(date).collectAsState(initial = 0.0) // ✅ 监听碳水
 
+    // 2. 获取当天所有记录，用来统计维生素项数
+    // 显式指定 List<DietRecord> 类型
+    val allRecords by viewModel.getDietRecordsForDate(date).collectAsState(initial = emptyList<DietRecord>())
+
+// 明确告诉编译器 it 是 DietRecord
+    val vitaminCount = allRecords.count { record -> record.category == "维生素" }
     Card(
         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.9f),
         colors = CardDefaults.cardColors(containerColor = if (isToday) Color(0xFFE0E7FF) else Color(0xFFF3F4F6)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            // ✅ 修复周周日：直接显示 weekday
             Text(text = weekday, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(text = date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
 
             Spacer(Modifier.height(32.dp))
 
-            // ✅ 使用 ExpandedModuleItem (大卡片)
+            // ✅ 饮食模块：显示热量、蛋白质、碳水、维生素
             ExpandedModuleItem(
                 title = "🍽 饮食",
                 mainValue = if (totalCalories > 0) "${totalCalories.toInt()} kcal" else "点击记录",
-                subItems = listOf("蛋白质" to "${totalProtein.toInt()}g", "碳水" to "0g", "脂肪" to "0g"),
+                subItems = listOf(
+                    "蛋白质" to "${totalProtein.toInt()}g",
+                    "碳水" to "${totalCarbs.toInt()}g", // ✅ 现在这里会有数据了
+                    "维生素" to "${vitaminCount} 种"   // ✅ 脂肪换成了维生素种类
+                ),
                 color = Color(0xFFFFF7ED),
                 onClick = onDietClick
             )

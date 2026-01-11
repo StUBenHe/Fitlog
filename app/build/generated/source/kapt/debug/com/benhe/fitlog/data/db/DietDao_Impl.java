@@ -4,6 +4,7 @@ import android.database.Cursor;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.room.CoroutinesRoom;
+import androidx.room.EntityDeletionOrUpdateAdapter;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
@@ -33,13 +34,15 @@ public final class DietDao_Impl implements DietDao {
 
   private final EntityInsertionAdapter<DietRecord> __insertionAdapterOfDietRecord;
 
+  private final EntityDeletionOrUpdateAdapter<DietRecord> __deletionAdapterOfDietRecord;
+
   public DietDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
     this.__insertionAdapterOfDietRecord = new EntityInsertionAdapter<DietRecord>(__db) {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR ABORT INTO `diet_records` (`id`,`foodName`,`category`,`quantity`,`calories`,`protein`,`date`,`timestamp`) VALUES (nullif(?, 0),?,?,?,?,?,?,?)";
+        return "INSERT OR ABORT INTO `diet_records` (`id`,`foodName`,`category`,`quantity`,`calories`,`protein`,`carbs`,`date`,`timestamp`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -63,19 +66,32 @@ public final class DietDao_Impl implements DietDao {
         }
         statement.bindDouble(5, entity.getCalories());
         statement.bindDouble(6, entity.getProtein());
+        statement.bindDouble(7, entity.getCarbs());
         if (entity.getDate() == null) {
-          statement.bindNull(7);
+          statement.bindNull(8);
         } else {
-          statement.bindString(7, entity.getDate());
+          statement.bindString(8, entity.getDate());
         }
-        statement.bindLong(8, entity.getTimestamp());
+        statement.bindLong(9, entity.getTimestamp());
+      }
+    };
+    this.__deletionAdapterOfDietRecord = new EntityDeletionOrUpdateAdapter<DietRecord>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "DELETE FROM `diet_records` WHERE `id` = ?";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          @NonNull final DietRecord entity) {
+        statement.bindLong(1, entity.getId());
       }
     };
   }
 
   @Override
-  public Object insertRecord(final DietRecord record,
-      final Continuation<? super Unit> $completion) {
+  public Object insertRecord(final DietRecord record, final Continuation<? super Unit> arg1) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -89,7 +105,25 @@ public final class DietDao_Impl implements DietDao {
           __db.endTransaction();
         }
       }
-    }, $completion);
+    }, arg1);
+  }
+
+  @Override
+  public Object deleteRecord(final DietRecord record, final Continuation<? super Unit> arg1) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        __db.beginTransaction();
+        try {
+          __deletionAdapterOfDietRecord.handle(record);
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
+        } finally {
+          __db.endTransaction();
+        }
+      }
+    }, arg1);
   }
 
   @Override
@@ -114,6 +148,7 @@ public final class DietDao_Impl implements DietDao {
           final int _cursorIndexOfQuantity = CursorUtil.getColumnIndexOrThrow(_cursor, "quantity");
           final int _cursorIndexOfCalories = CursorUtil.getColumnIndexOrThrow(_cursor, "calories");
           final int _cursorIndexOfProtein = CursorUtil.getColumnIndexOrThrow(_cursor, "protein");
+          final int _cursorIndexOfCarbs = CursorUtil.getColumnIndexOrThrow(_cursor, "carbs");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfTimestamp = CursorUtil.getColumnIndexOrThrow(_cursor, "timestamp");
           final List<DietRecord> _result = new ArrayList<DietRecord>(_cursor.getCount());
@@ -143,6 +178,8 @@ public final class DietDao_Impl implements DietDao {
             _tmpCalories = _cursor.getDouble(_cursorIndexOfCalories);
             final double _tmpProtein;
             _tmpProtein = _cursor.getDouble(_cursorIndexOfProtein);
+            final double _tmpCarbs;
+            _tmpCarbs = _cursor.getDouble(_cursorIndexOfCarbs);
             final String _tmpDate;
             if (_cursor.isNull(_cursorIndexOfDate)) {
               _tmpDate = null;
@@ -151,7 +188,7 @@ public final class DietDao_Impl implements DietDao {
             }
             final long _tmpTimestamp;
             _tmpTimestamp = _cursor.getLong(_cursorIndexOfTimestamp);
-            _item = new DietRecord(_tmpId,_tmpFoodName,_tmpCategory,_tmpQuantity,_tmpCalories,_tmpProtein,_tmpDate,_tmpTimestamp);
+            _item = new DietRecord(_tmpId,_tmpFoodName,_tmpCategory,_tmpQuantity,_tmpCalories,_tmpProtein,_tmpCarbs,_tmpDate,_tmpTimestamp);
             _result.add(_item);
           }
           return _result;
@@ -211,6 +248,47 @@ public final class DietDao_Impl implements DietDao {
   @Override
   public Flow<Double> getTotalProteinForDate(final String date) {
     final String _sql = "SELECT SUM(protein) FROM diet_records WHERE date = ?";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    if (date == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, date);
+    }
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"diet_records"}, new Callable<Double>() {
+      @Override
+      @Nullable
+      public Double call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final Double _result;
+          if (_cursor.moveToFirst()) {
+            final Double _tmp;
+            if (_cursor.isNull(0)) {
+              _tmp = null;
+            } else {
+              _tmp = _cursor.getDouble(0);
+            }
+            _result = _tmp;
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
+  public Flow<Double> getTotalCarbsByDate(final String date) {
+    final String _sql = "SELECT SUM(carbs) FROM diet_records WHERE date = ?";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     if (date == null) {

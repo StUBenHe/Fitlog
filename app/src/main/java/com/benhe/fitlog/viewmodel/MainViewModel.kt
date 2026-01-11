@@ -20,6 +20,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         quantity: String,
         calories: Double,
         protein: Double,
+        carbs: Double, // ✅ 增加参数
         date: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -29,13 +30,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 quantity = quantity,
                 calories = calories,
                 protein = protein,
+                carbs = carbs, // ✅ 赋值
                 date = date,
-                timestamp = System.currentTimeMillis() // 自动生成时间戳
+                timestamp = System.currentTimeMillis()
             )
             dietDao.insertRecord(record)
         }
     }
 
+    // 增加碳水查询
     fun getTotalCaloriesForDate(date: String): Flow<Double> {
         return dietDao.getTotalCaloriesByDate(date).map { it ?: 0.0 }
     }
@@ -44,7 +47,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return dietDao.getTotalProteinForDate(date).map { it ?: 0.0 }
     }
 
+    fun getTotalCarbsForDate(date: String): Flow<Double> {
+        return dietDao.getTotalCarbsByDate(date).map { it ?: 0.0 }
+    }
+
+    // 在 MainViewModel 类中确保有这个方法
     fun getDietRecordsForDate(date: String): Flow<List<DietRecord>> {
         return dietDao.getRecordsByDate(date)
     }
+
+    // 在 MainViewModel 类中添加
+    fun deleteDietRecord(record: DietRecord) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dietDao.deleteRecord(record)
+        }
+    }
+
 }
