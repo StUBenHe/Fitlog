@@ -1,5 +1,10 @@
 package com.benhe.fitlog
 
+
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,10 +24,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +40,8 @@ import com.benhe.fitlog.ui.screens.DailyDietListScreen
 import com.benhe.fitlog.ui.theme.FitlogTheme
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
+
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -137,7 +142,8 @@ fun DayCard(
     val totalCarbs by viewModel.getTotalCarbsForDate(date).collectAsState(initial = 0.0)
     val allRecords by viewModel.getDietRecordsForDate(date).collectAsState(initial = emptyList())
     val vitaminCount = allRecords.count { it.category == "维生素" }
-
+// 在 DayCard 内部添加这一行
+    val isAfterburnAuto by viewModel.isAfterburnAutoActive.collectAsState()
     val activityState = viewModel.getActivityForDate(date).collectAsState(initial = null)
     val activityData = activityState.value
     val tdee = viewModel.getTodayExpenditure(activityData)
@@ -149,6 +155,7 @@ fun DayCard(
         .sortedBy { it.value }
 
     var showActivityDialog by remember { mutableStateOf(false) }
+
 
     Card(
         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.95f),
@@ -224,19 +231,20 @@ fun DayCard(
             }
         }
     }
-
     if (showActivityDialog) {
         ActivityInputDialog(
             initialSleep = activityData?.sleepHours ?: 8f,
             initialIntensity = activityData?.intensity ?: LifeIntensity.NORMAL,
-            initialAfterburn = activityData?.isAfterburnEnabled ?: false,
+            isAfterburnAutoActive = isAfterburnAuto, // 传入自动计算的状态
             onDismiss = { showActivityDialog = false },
-            onConfirm = { sleep, intensity, afterburn ->
-                viewModel.updateActivityForDate(date, sleep, intensity, afterburn)
+            onConfirm = { sleep, intensity ->
+                // 调用 ViewModel 的保存逻辑
+                viewModel.onActivityConfirm(date, sleep, intensity)
                 showActivityDialog = false
             }
         )
     }
+
 }
 
 @Composable
@@ -352,37 +360,30 @@ fun WorkoutRegionCard(name: String, stars: Int, note: String, onUpdate: (Int, St
 }
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityInputDialog(
     initialSleep: Float,
     initialIntensity: LifeIntensity,
-    initialAfterburn: Boolean,
+    isAfterburnAutoActive: Boolean, // ✅ 传入由 ViewModel 计算出的自动状态
     onDismiss: () -> Unit,
-    onConfirm: (Float, LifeIntensity, Boolean) -> Unit
+    onConfirm: (Float, LifeIntensity) -> Unit // ✅ 去掉 Boolean 参数
 ) {
     var sleep by remember { mutableFloatStateOf(initialSleep) }
     var intensity by remember { mutableStateOf(initialIntensity) }
-    var afterburn by remember { mutableStateOf(initialAfterburn) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("📝 记录今日状态", fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // 1. 睡眠时间
-                Text("睡眠时间: ${String.format("%.1f", sleep)} 小时", style = MaterialTheme.typography.bodyMedium)
-                Slider(
-                    value = sleep,
-                    onValueChange = { sleep = it },
-                    valueRange = 4f..12f,
-                    steps = 15
-                )
+                // 1. 睡眠时间... (Slider 部分保持不变)
+                Text("睡眠时间: ${String.format("%.1f", sleep)} 小时")
+                Slider(value = sleep, onValueChange = { sleep = it }, valueRange = 4f..12f)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. 生活强度选择按钮 (这就是你找的按钮逻辑)
+                // 2. 生活强度... (FilterChip 部分保持不变)
                 Text("生活强度: ${intensity.displayName}", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -404,32 +405,43 @@ fun ActivityInputDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3. 后燃效应
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. 自动后燃效应展示
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFF9FAFB), RoundedCornerShape(8.dp))
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .background(
+                            if (isAfterburnAutoActive) Color(0xFFFFE0B2) else Color(0xFFF5F5F5),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("🔥 后燃效应", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         Text(
-                            "开启后代谢额外提升10%",
+                            text = if (isAfterburnAutoActive) "🔥 后燃效应：已激活" else "❄️ 后燃效应：未开启",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAfterburnAutoActive) Color(0xFFE65100) else Color.Gray
+                        )
+                        Text(
+                            text = if (isAfterburnAutoActive) "检测到身体部分肌肉处于高疲劳状态" else "身体恢复良好，暂无额外后燃",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
                     }
-                    Switch(
-                        checked = afterburn,
-                        onCheckedChange = { afterburn = it }
+                    // ✅ 开关变为只读或去掉开关，改用图标展示状态
+                    Icon(
+                        imageVector = if (isAfterburnAutoActive) Icons.Default.CheckCircle else Icons.Default.Info,
+                        contentDescription = null,
+                        tint = if (isAfterburnAutoActive) Color(0xFFE65100) else Color.LightGray
                     )
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(sleep, intensity, afterburn) }) {
+            Button(onClick = { onConfirm(sleep, intensity) }) {
                 Text("确定")
             }
         },

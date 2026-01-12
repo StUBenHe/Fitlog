@@ -1,26 +1,22 @@
 package com.benhe.fitlog.logic
 
 import com.benhe.fitlog.model.LifeIntensity
+import com.benhe.fitlog.model.UserProfile
+import kotlin.math.roundToInt
 
 object HealthCalculator {
 
-    // ✅ 定义后燃效应系数：1.1 表示提升 10% 的代谢
+    // 后燃效应系数：提升 10% 的代谢
     private const val AFTERBURN_FACTOR = 1.1f
 
     /**
      * 1. 计算基础代谢 BMR
      */
-    fun calcBMR(
-        weight: Double,
-        height: Double,
-        age: Int,
-        gender: String,
-        bodyFat: Double? = null
-    ): Int {
-        if (bodyFat != null && bodyFat > 0) {
-            val leanBodyMass = weight * (1 - bodyFat / 100)
-            return (370 + 21.6 * leanBodyMass).toInt()
-        }
+    fun calcBMR(user: UserProfile): Int {
+        val weight = user.weight
+        val height = user.height
+        val age = user.age
+        val gender = user.gender
 
         return if (gender.lowercase() == "male" || gender == "男") {
             (10 * weight + 6.25 * height - 5 * age + 5).toInt()
@@ -31,17 +27,15 @@ object HealthCalculator {
 
     /**
      * 2. 计算每日总能量消耗 (TDEE)
-     * 逻辑：(基础代谢 * 生活强度系数) * [后燃效应开关]
      */
     fun calculateDailyExpenditure(
         bmr: Int,
         intensity: LifeIntensity,
-        isAfterburnEnabled: Boolean = false // ✅ 新增开关参数
+        isAfterburnEnabled: Boolean = false
     ): Int {
-        // 基础消耗 = BMR * 生活强度 (如 0.8, 1.0, 1.2, 1.5)
+        // 使用枚举中定义的 factor (1.1 - 1.75)
         val baseTDEE = bmr * intensity.factor
 
-        // 如果开启后燃效应，在基础消耗上再乘 1.1
         val finalExpenditure = if (isAfterburnEnabled) {
             baseTDEE * AFTERBURN_FACTOR
         } else {
@@ -52,17 +46,20 @@ object HealthCalculator {
     }
 
     /**
-     * 3. 计算综合恢复系数 (用于训练模块)
+     * 3. 计算综合恢复系数 (用于简易展示或作为 LoadCalculator 的参考)
+     * 逻辑：睡眠时长权重 + 生活强度恢复权重 (久坐恢复快)
      */
     fun calculateRecoveryFactor(sleepHours: Float, intensity: LifeIntensity): Float {
-        val sleepFactor = when {
-            sleepHours < 6f -> 0.7f
-            sleepHours > 8.5f -> 1.1f
-            else -> 1.0f
-        }
+        val sleepFactor = (sleepHours / 8f).coerceIn(0.6f, 1.2f)
+        // 直接使用枚举中的 recoveryImpact (久坐 1.3, 强力 0.9)
+        return (sleepFactor * intensity.recoveryImpact).coerceIn(0.5f, 1.5f)
+    }
 
-        val intensityFactor = (2.0f - intensity.factor).coerceIn(0.5f, 1.5f)
-
-        return (sleepFactor * intensityFactor).coerceIn(0.5f, 1.5f)
+    /**
+     * 4. 计算蛋白质目标 (克)
+     */
+    fun calculateProteinTarget(user: UserProfile, intensity: LifeIntensity): Float {
+        val genderBonus = if (user.gender.lowercase() == "male" || user.gender == "男") 1.0f else 0.9f
+        return (user.weight * intensity.proteinMultiplier * genderBonus).toFloat()
     }
 }

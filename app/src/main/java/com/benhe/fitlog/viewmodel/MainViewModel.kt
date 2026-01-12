@@ -20,6 +20,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.benhe.fitlog.data.entity.WorkoutSet
 import com.benhe.fitlog.logic.LoadCalculator
+import kotlinx.coroutines.flow.*
+import java.time.LocalDate
+import java.time.ZoneId
+
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -35,52 +39,82 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * 2. 获取 8 大区块负荷状态
      * 解决 Cannot infer type 的关键：显式指定 emptyMap 的类型
      */
-// MainViewModel.kt
+
 
     private val currentSleepHours = 8f
     private val currentProtein = 100f
 
-    // MainViewModel.kt
 
+
+
+// 1. 获取基础数据流
+    private val selectedDate = LocalDate.now().toString() // 或你当前选中的日期
+    val dailyActivityFlow = dailyActivityDao.getActivityByDate(selectedDate)
+    val totalProteinFlow = dietDao.getTotalProteinForDate(selectedDate)
     // 这样 UI 就能通过 viewModel.bodyStatus 监听到最新的恢复状态
-    val bodyStatus: StateFlow<Map<BodyRegion, Float>> = workoutRepository.getBodyStatusFlow()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = BodyRegion.entries.associateWith { 1.0f } // 初始满血
+
+    private val selectedDateString = LocalDate.now().toString()
+    val bodyStatus: StateFlow<Map<BodyRegion, Float>> = combine(
+        workoutRepository.getRecentSetsFlow(),
+        dailyActivityDao.getActivityByDate(selectedDateString),
+        dietDao.getTotalProteinForDate(selectedDateString)
+    ) { sets, activity, protein ->
+        LoadCalculator.calculateRegionStatus(
+            sets = sets,
+            userProfile = getUserProfile(),
+            sleepHours = activity?.sleepHours ?: 8f,
+            intensity = activity?.intensity ?: LifeIntensity.NORMAL,
+            isAfterburnActive = activity?.isAfterburnEnabled ?: false,
+            proteinGrams = (protein ?: 0.0).toFloat(),
+            targetTimestamp = System.currentTimeMillis() // ✅ 确保使用当前时间进行计算
         )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BodyRegion.entries.associateWith { 1.0f })
+
+    // B. 自动化后燃状态流：基于 bodyStatus 计算 (解决了 Variable must be initialized 错误)
+    val isAfterburnAutoActive: StateFlow<Boolean> = bodyStatus
+        .map { statusMap -> statusMap.values.any { it < 0.5f } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
 
     /**
-     * 3. 提取用户资料 (用于计算)
+     * 获取用户资料 (修正后的私有方法)
      */
-    private fun getUserProfile(): UserProfile {
-        val sharedPref = getApplication<Application>().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        return UserProfile(
-            weight = sharedPref.getString("weight", "70.0")?.toDoubleOrNull() ?: 70.0,
-            height = sharedPref.getString("height", "180.0")?.toDoubleOrNull() ?: 180.0,
-            age = sharedPref.getString("age", "27")?.toIntOrNull() ?: 27,
-            gender = sharedPref.getString("gender", "男") ?: "男"
-        )
-    }
+
 
     /**
-     * 4. 计算今日消耗 (由 UI 调用)
+     * 计算今日消耗 (修正参数报错)
      */
     fun getTodayExpenditure(activity: DailyActivity?): Int {
         val profile = getUserProfile()
-        val bmr = HealthCalculator.calcBMR(
-            weight = profile.weight,
-            height = profile.height,
-            age = profile.age,
-            gender = profile.gender
-        )
+
+        val bmr = HealthCalculator.calcBMR(profile)
+
+        // 使用自动检测的后燃状态，如果没有 activity 数据，默认参考当前 bodyStatus 算出的自动化值
+        val afterburn = activity?.isAfterburnEnabled ?: isAfterburnAutoActive.value
+
         return HealthCalculator.calculateDailyExpenditure(
             bmr = bmr,
             intensity = activity?.intensity ?: LifeIntensity.NORMAL,
-            isAfterburnEnabled = activity?.isAfterburnEnabled ?: false
+            isAfterburnEnabled = afterburn
         )
     }
+    /**
+     * 更新每日状态 (确认时调用)
+     */
+    fun updateActivityForDate(date: String, sleep: Float, intensity: LifeIntensity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // ✅ 后燃开关改为自动判断逻辑：如果当前 bodyStatus 有部位 < 0.5，存入数据库时设为 true
+            val autoAfterburn = isAfterburnAutoActive.value
 
+            val record = DailyActivity(
+                date = date,
+                sleepHours = sleep,
+                intensity = intensity,
+                isAfterburnEnabled = autoAfterburn
+            )
+            dailyActivityDao.insertOrUpdateActivity(record)
+        }
+    }
     // --- 饮食记录逻辑 ---
 
     fun saveDietRecord(
@@ -160,32 +194,65 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             workoutDao.insertSet(set)
         }
     }
+
+
     fun syncWorkoutSets(date: String, records: Map<BodyRegion, Pair<Int, String>>) {
         viewModelScope.launch(Dispatchers.IO) {
-            val localDate = java.time.LocalDate.parse(date)
-            val startOfDay = localDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val endOfDay = localDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
+            val selectedLocalDate = LocalDate.parse(date)
+            val now = java.time.LocalDateTime.now()
 
-            // 1. 先清理该日期所有旧记录
+            // ✅ 修正：对齐整点时间戳
+            val timestamp = if (selectedLocalDate.isEqual(now.toLocalDate())) {
+                // 场景：记录今天 -> 取当前小时的整点（例如 22:35 -> 22:00）
+                now.withMinute(0).withSecond(0).withNano(0)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+            } else {
+                // 场景：补录过去 -> 默认取那天晚上的 20:00
+                selectedLocalDate.atTime(20, 0)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+            }
+
+            // 删除旧记录逻辑 (按天范围删除)
+            val startOfDay = selectedLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val endOfDay = startOfDay + 86400000L - 1
             workoutDao.deleteSetsByDay(startOfDay, endOfDay)
 
-            // 2. 批量插入有内容的记录
+            // 批量插入
             records.forEach { (region, data) ->
                 if (data.first > 0 || data.second.isNotBlank()) {
-                    val set = WorkoutSet(
-                        sessionId = 0,             // 补全参数
+                    workoutDao.insertSet(WorkoutSet(
                         region = region,
-                        exerciseId = "manual_entry",// 补全参数
-                        weight = 0f,               // 补全参数
-                        reps = 0,                  // 补全参数
                         rpe = data.first,
                         note = data.second,
-                        timestamp = startOfDay
-                    )
-                    workoutDao.insertSet(set)
+                        timestamp = timestamp, // ✅ 存入整点时间戳
+                        weight = 0f, reps = 0, sessionId = 0, exerciseId = "manual"
+                    ))
                 }
             }
         }
     }
 
+    // 修正获取 Profile 逻辑，防止单位错误
+    private fun getUserProfile(): UserProfile {
+        val sharedPref = getApplication<Application>().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        var weight = sharedPref.getString("weight", "70.0")?.toDoubleOrNull() ?: 70.0
+        var height = sharedPref.getString("height", "180.0")?.toDoubleOrNull() ?: 180.0
+
+        // 自动纠正单位错误（如果是克或毫米）
+        if (weight > 500) weight /= 1000
+        if (height > 1000) height /= 10
+
+        return UserProfile(weight, height,
+            sharedPref.getString("age", "27")?.toIntOrNull() ?: 27,
+            sharedPref.getString("gender", "男") ?: "男"
+        )
+    }
+    fun onActivityConfirm(date: String, sleep: Float, intensity: LifeIntensity) {
+        // 直接调用更新逻辑，去掉了手动 afterburn 参数
+        updateActivityForDate(date, sleep, intensity)
+    }
 }

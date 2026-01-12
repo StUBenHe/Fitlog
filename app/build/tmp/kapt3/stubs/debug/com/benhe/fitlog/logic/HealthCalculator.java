@@ -1,6 +1,6 @@
 package com.benhe.fitlog.logic;
 
-@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u00006\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0010\u0007\n\u0000\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u0006\n\u0002\b\u0003\n\u0002\u0010\u000e\n\u0002\b\u0005\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000b\n\u0002\b\u0003\b\u00c7\u0002\u0018\u00002\u00020\u0001B\u0007\b\u0002\u00a2\u0006\u0002\u0010\u0002J7\u0010\u0005\u001a\u00020\u00062\u0006\u0010\u0007\u001a\u00020\b2\u0006\u0010\t\u001a\u00020\b2\u0006\u0010\n\u001a\u00020\u00062\u0006\u0010\u000b\u001a\u00020\f2\n\b\u0002\u0010\r\u001a\u0004\u0018\u00010\b\u00a2\u0006\u0002\u0010\u000eJ \u0010\u000f\u001a\u00020\u00062\u0006\u0010\u0010\u001a\u00020\u00062\u0006\u0010\u0011\u001a\u00020\u00122\b\b\u0002\u0010\u0013\u001a\u00020\u0014J\u0016\u0010\u0015\u001a\u00020\u00042\u0006\u0010\u0016\u001a\u00020\u00042\u0006\u0010\u0011\u001a\u00020\u0012R\u000e\u0010\u0003\u001a\u00020\u0004X\u0082T\u00a2\u0006\u0002\n\u0000\u00a8\u0006\u0017"}, d2 = {"Lcom/benhe/fitlog/logic/HealthCalculator;", "", "()V", "AFTERBURN_FACTOR", "", "calcBMR", "", "weight", "", "height", "age", "gender", "", "bodyFat", "(DDILjava/lang/String;Ljava/lang/Double;)I", "calculateDailyExpenditure", "bmr", "intensity", "Lcom/benhe/fitlog/model/LifeIntensity;", "isAfterburnEnabled", "", "calculateRecoveryFactor", "sleepHours", "app_debug"})
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000.\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0010\u0007\n\u0000\n\u0002\u0010\b\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000b\n\u0002\b\u0004\b\u00c7\u0002\u0018\u00002\u00020\u0001B\u0007\b\u0002\u00a2\u0006\u0002\u0010\u0002J\u000e\u0010\u0005\u001a\u00020\u00062\u0006\u0010\u0007\u001a\u00020\bJ \u0010\t\u001a\u00020\u00062\u0006\u0010\n\u001a\u00020\u00062\u0006\u0010\u000b\u001a\u00020\f2\b\b\u0002\u0010\r\u001a\u00020\u000eJ\u0016\u0010\u000f\u001a\u00020\u00042\u0006\u0010\u0007\u001a\u00020\b2\u0006\u0010\u000b\u001a\u00020\fJ\u0016\u0010\u0010\u001a\u00020\u00042\u0006\u0010\u0011\u001a\u00020\u00042\u0006\u0010\u000b\u001a\u00020\fR\u000e\u0010\u0003\u001a\u00020\u0004X\u0082T\u00a2\u0006\u0002\n\u0000\u00a8\u0006\u0012"}, d2 = {"Lcom/benhe/fitlog/logic/HealthCalculator;", "", "()V", "AFTERBURN_FACTOR", "", "calcBMR", "", "user", "Lcom/benhe/fitlog/model/UserProfile;", "calculateDailyExpenditure", "bmr", "intensity", "Lcom/benhe/fitlog/model/LifeIntensity;", "isAfterburnEnabled", "", "calculateProteinTarget", "calculateRecoveryFactor", "sleepHours", "app_debug"})
 public final class HealthCalculator {
     private static final float AFTERBURN_FACTOR = 1.1F;
     @org.jetbrains.annotations.NotNull()
@@ -13,15 +13,13 @@ public final class HealthCalculator {
     /**
      * 1. 计算基础代谢 BMR
      */
-    public final int calcBMR(double weight, double height, int age, @org.jetbrains.annotations.NotNull()
-    java.lang.String gender, @org.jetbrains.annotations.Nullable()
-    java.lang.Double bodyFat) {
+    public final int calcBMR(@org.jetbrains.annotations.NotNull()
+    com.benhe.fitlog.model.UserProfile user) {
         return 0;
     }
     
     /**
      * 2. 计算每日总能量消耗 (TDEE)
-     * 逻辑：(基础代谢 * 生活强度系数) * [后燃效应开关]
      */
     public final int calculateDailyExpenditure(int bmr, @org.jetbrains.annotations.NotNull()
     com.benhe.fitlog.model.LifeIntensity intensity, boolean isAfterburnEnabled) {
@@ -29,9 +27,19 @@ public final class HealthCalculator {
     }
     
     /**
-     * 3. 计算综合恢复系数 (用于训练模块)
+     * 3. 计算综合恢复系数 (用于简易展示或作为 LoadCalculator 的参考)
+     * 逻辑：睡眠时长权重 + 生活强度恢复权重 (久坐恢复快)
      */
     public final float calculateRecoveryFactor(float sleepHours, @org.jetbrains.annotations.NotNull()
+    com.benhe.fitlog.model.LifeIntensity intensity) {
+        return 0.0F;
+    }
+    
+    /**
+     * 4. 计算蛋白质目标 (克)
+     */
+    public final float calculateProteinTarget(@org.jetbrains.annotations.NotNull()
+    com.benhe.fitlog.model.UserProfile user, @org.jetbrains.annotations.NotNull()
     com.benhe.fitlog.model.LifeIntensity intensity) {
         return 0.0F;
     }
