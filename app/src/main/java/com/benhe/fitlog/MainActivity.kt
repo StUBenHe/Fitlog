@@ -5,51 +5,39 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.benhe.fitlog.logic.DateUtils
+import com.benhe.fitlog.model.BodyRegion
+import com.benhe.fitlog.model.LifeIntensity
+import com.benhe.fitlog.ui.DietScreen
 import com.benhe.fitlog.ui.ProfileScreen
 import com.benhe.fitlog.ui.screens.DailyDietListScreen
 import com.benhe.fitlog.ui.theme.FitlogTheme
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
-import com.benhe.fitlog.ui.DietScreen
-import com.benhe.fitlog.model.LifeIntensity
-import com.benhe.fitlog.ui.theme.ActivityInputDialog
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.ui.text.TextStyle // 解决 TextStyle 报错
-import com.benhe.fitlog.model.BodyRegion // 解决 BodyRegion 报错
-import androidx.compose.runtime.snapshots.SnapshotStateMap
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.ui.draw.clip
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +49,6 @@ class MainActivity : ComponentActivity() {
                 val sharedPref = remember { context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE) }
                 val hasInit = remember { sharedPref.getBoolean("has_init", false) }
 
-                // 控制路由的状态
                 var currentScreen by remember { mutableIntStateOf(if (hasInit) 1 else 0) }
                 var selectedDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
@@ -69,36 +56,21 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.padding(innerPadding)) {
                         when (currentScreen) {
                             0 -> ProfileScreen(onNavigateToCalendar = { currentScreen = 1 })
-
-                            // 1. 主日历页
                             1 -> CalendarScreen(
                                 viewModel = viewModel,
                                 onNavigateToDiet = { date -> selectedDate = date; currentScreen = 2 },
-                                // ✅ 重点：这里处理训练卡片的跳转请求
                                 onNavigateToWorkout = { date -> selectedDate = date; currentScreen = 4 },
                                 onEditProfile = { currentScreen = 0 }
                             )
-
-                            // 2. 饮食列表页
                             2 -> DailyDietListScreen(
-                                date = selectedDate,
-                                viewModel = viewModel,
-                                onAddClick = { currentScreen = 3 },
-                                onBack = { currentScreen = 1 }
+                                date = selectedDate, viewModel = viewModel,
+                                onAddClick = { currentScreen = 3 }, onBack = { currentScreen = 1 }
                             )
-
-                            // 3. 饮食添加页
                             3 -> DietScreen(
-                                date = selectedDate,
-                                viewModel = viewModel,
-                                onBack = { currentScreen = 2 }
+                                date = selectedDate, viewModel = viewModel, onBack = { currentScreen = 2 }
                             )
-
-                            // 4. ✅ 训练详情页 (新增加的界面)
                             4 -> WorkoutSessionScreen(
-                                date = selectedDate,
-                                viewModel = viewModel,
-                                onBack = { currentScreen = 1 }
+                                date = selectedDate, viewModel = viewModel, onBack = { currentScreen = 1 }
                             )
                         }
                     }
@@ -113,7 +85,7 @@ class MainActivity : ComponentActivity() {
 fun CalendarScreen(
     viewModel: MainViewModel,
     onNavigateToDiet: (String) -> Unit,
-    onNavigateToWorkout: (String) -> Unit, // ✅ 增加参数
+    onNavigateToWorkout: (String) -> Unit,
     onEditProfile: () -> Unit
 ) {
     val context = LocalContext.current
@@ -145,7 +117,7 @@ fun CalendarScreen(
                 isToday = dateList[page] == LocalDate.now(),
                 viewModel = viewModel,
                 onDietClick = { onNavigateToDiet(dateString) },
-                onWorkoutClick = { onNavigateToWorkout(dateString) } // ✅ 传入回调
+                onWorkoutClick = { onNavigateToWorkout(dateString) }
             )
         }
     }
@@ -158,9 +130,8 @@ fun DayCard(
     isToday: Boolean,
     viewModel: MainViewModel,
     onDietClick: () -> Unit,
-    onWorkoutClick: () -> Unit // ✅ 增加参数
+    onWorkoutClick: () -> Unit
 ) {
-    // 数据收集部分
     val totalCalories by viewModel.getTotalCaloriesForDate(date).collectAsState(initial = 0.0)
     val totalProtein by viewModel.getTotalProteinForDate(date).collectAsState(initial = 0.0)
     val totalCarbs by viewModel.getTotalCarbsForDate(date).collectAsState(initial = 0.0)
@@ -171,13 +142,11 @@ fun DayCard(
     val activityData = activityState.value
     val tdee = viewModel.getTodayExpenditure(activityData)
 
-    // 身体状态数据
     val bodyStatus by viewModel.bodyStatus.collectAsState()
+    // 恢复逻辑：状态低于 0.99 表示疲劳
     val activeLoads = bodyStatus.entries
-        .filter { it.value > 0.1f }
-        .sortedByDescending { it.value }
-        .take(3)
-        .map { it.key to it.value }
+        .filter { it.value < 0.99f }
+        .sortedBy { it.value }
 
     var showActivityDialog by remember { mutableStateOf(false) }
 
@@ -198,7 +167,6 @@ fun DayCard(
 
             Spacer(Modifier.height(24.dp))
 
-            // 1. 饮食模块
             ExpandedModuleItem(
                 title = "🍽 饮食",
                 mainValue = if (totalCalories > 0) "${totalCalories.toInt()} kcal" else "点击记录",
@@ -213,7 +181,6 @@ fun DayCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // 2. 每日状态模块
             ExpandedModuleItem(
                 title = "🏃 状态",
                 mainValue = if (activityData != null) "${activityData.sleepHours}h" else "待记录",
@@ -228,25 +195,32 @@ fun DayCard(
 
             Spacer(Modifier.height(12.dp))
 
-            // 3. 🏋️ 训练模块
             ExpandedModuleItem(
                 title = "🏋️ 训练",
                 mainValue = if (activeLoads.isEmpty()) "状态极佳" else "恢复中",
                 subItems = if (activeLoads.isEmpty()) {
                     listOf("建议" to "可冲击重量", "状态" to "100%", "提示" to "开始训练")
                 } else {
-                    activeLoads.map { (region, load) ->
-                        region.displayName to "${(load * 100).toInt()}%"
+                    activeLoads.take(3).map { (region, status) ->
+                        region.displayName to "${(status * 100).toInt()}%"
                     }
                 },
                 color = Color(0xFFEEF2FF),
                 onClick = onWorkoutClick
             )
 
-// --- 新增：恢复计时器呈现区 ---
-            if (activeLoads.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                RecoveryTimerView(activeLoads)
+            Spacer(Modifier.height(16.dp))
+
+            // 🏆 身体状态看板
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .padding(16.dp)
+            ) {
+                Text("🏆 身体状态", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(12.dp))
+                RecoveryDashboardView(regionStatus = bodyStatus)
             }
         }
     }
@@ -264,11 +238,6 @@ fun DayCard(
         )
     }
 }
-
-/**
- * 新增加的训练详情页
- */
-@OptIn(ExperimentalMaterial3Api::class)
 
 @Composable
 fun ExpandedModuleItem(title: String, mainValue: String, subItems: List<Pair<String, String>>, color: Color, onClick: () -> Unit) {
@@ -296,6 +265,96 @@ fun ExpandedModuleItem(title: String, mainValue: String, subItems: List<Pair<Str
 }
 
 @Composable
+fun RecoveryDashboardView(regionStatus: Map<BodyRegion, Float>) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        regionStatus.forEach { (region, status) ->
+            Row(
+                modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(region.displayName, modifier = Modifier.width(50.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                Box(modifier = Modifier.weight(1f).height(8.dp).background(Color(0xFFE0E0E0), CircleShape)) {
+                    Box(modifier = Modifier.fillMaxWidth(status).fillMaxHeight().background(
+                        when {
+                            status < 0.4f -> Color(0xFFFF5252)
+                            status < 0.8f -> Color(0xFF4A90E2)
+                            else -> Color(0xFF4CAF50)
+                        }, CircleShape
+                    ))
+                }
+                Text("${(status * 100).toInt()}%", modifier = Modifier.padding(start = 8.dp).width(35.dp), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.End)
+            }
+        }
+    }
+}
+
+@Composable
+fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> Unit) {
+    val todaySets by viewModel.getSetsByDate(date).collectAsState(initial = emptyList())
+    val draftState = remember { mutableStateMapOf<BodyRegion, Pair<Int, String>>() }
+
+    LaunchedEffect(todaySets) {
+        BodyRegion.entries.forEach { draftState[it] = Pair(0, "") }
+        todaySets.forEach { set -> draftState[set.region] = Pair(set.rpe ?: 0, set.note ?: "") }
+    }
+
+    Scaffold(
+        topBar = {
+            @OptIn(ExperimentalMaterial3Api::class)
+            TopAppBar(title = { Text("$date 训练记录") }, navigationIcon = {
+                IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "返回") }
+            })
+        },
+        bottomBar = {
+            Button(
+                onClick = { viewModel.syncWorkoutSets(date, draftState.toMap()); onBack() },
+                modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text("保存今日训练记录") }
+        }
+    ) { padding ->
+        LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(BodyRegion.entries) { region ->
+                val state = draftState[region] ?: Pair(0, "")
+                WorkoutRegionCard(region.displayName, state.first, state.second) { s, n -> draftState[region] = Pair(s, n) }
+            }
+            item { Spacer(Modifier.height(80.dp)) }
+        }
+    }
+}
+
+@Composable
+fun WorkoutRegionCard(name: String, stars: Int, note: String, onUpdate: (Int, String) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Row {
+                    repeat(5) { i ->
+                        val s = i + 1
+                        Text(
+                            if (s <= stars) "★" else "☆",
+                            fontSize = 24.sp,
+                            color = if (s <= stars) Color(0xFFE67E22) else Color(0xFFD1D5DB),
+                            modifier = Modifier.clickable { onUpdate(if (stars == s) 0 else s, note) }
+                        )
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = note, onValueChange = { onUpdate(stars, it) },
+                placeholder = { Text("录入动作详情...") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+        }
+    }
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun ActivityInputDialog(
     initialSleep: Float,
     initialIntensity: LifeIntensity,
@@ -303,244 +362,79 @@ fun ActivityInputDialog(
     onDismiss: () -> Unit,
     onConfirm: (Float, LifeIntensity, Boolean) -> Unit
 ) {
-    var sleep by remember { mutableStateOf(initialSleep) }
+    var sleep by remember { mutableFloatStateOf(initialSleep) }
     var intensity by remember { mutableStateOf(initialIntensity) }
     var afterburn by remember { mutableStateOf(initialAfterburn) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("记录今日状态") },
+        title = { Text("📝 记录今日状态", fontWeight = FontWeight.Bold) },
         text = {
-            Column {
-                Text("睡眠时间: ${String.format("%.1f", sleep)} 小时")
-                Slider(value = sleep, onValueChange = { sleep = it }, valueRange = 4f..12f)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // 1. 睡眠时间
+                Text("睡眠时间: ${String.format("%.1f", sleep)} 小时", style = MaterialTheme.typography.bodyMedium)
+                Slider(
+                    value = sleep,
+                    onValueChange = { sleep = it },
+                    valueRange = 4f..12f,
+                    steps = 15
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("生活强度: ${intensity.displayName}")
-                // 这里可以根据需要补全强度选择按钮...
-                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2. 生活强度选择按钮 (这就是你找的按钮逻辑)
+                Text("生活强度: ${intensity.displayName}", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    LifeIntensity.entries.forEach { item ->
+                        val isSelected = intensity == item
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { intensity = item },
+                            label = { Text(item.displayName, fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. 后燃效应
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF9FAFB), RoundedCornerShape(8.dp))
+                        .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
-                        Text("后燃效应", style = MaterialTheme.typography.bodyLarge)
-                        Text("开启后代谢额外提升10%", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("🔥 后燃效应", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                        Text(
+                            "开启后代谢额外提升10%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
                     }
-                    Switch(checked = afterburn, onCheckedChange = { afterburn = it })
+                    Switch(
+                        checked = afterburn,
+                        onCheckedChange = { afterburn = it }
+                    )
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(sleep, intensity, afterburn) }) { Text("确定") }
+            Button(onClick = { onConfirm(sleep, intensity, afterburn) }) {
+                Text("确定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
         }
     )
 }
-
-@Composable
-fun BodyLoadQuickView(loads: List<Pair<com.benhe.fitlog.model.BodyRegion, Float>>) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-        loads.forEach { (region, load) ->
-            val color = when {
-                load < 0.4f -> Color(0xFF4CAF50)
-                load < 0.8f -> Color(0xFFFFC107)
-                else -> Color(0xFFF44336)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(region.displayName, fontSize = 10.sp, modifier = Modifier.width(50.dp))
-                LinearProgressIndicator(
-                    progress = load.coerceAtMost(1f),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = color,
-                    trackColor = color.copy(alpha = 0.2f)
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-    }
-}
-
-/**
- * 核心：训练详情页 (直接显示8个部位，无添加按钮)
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> Unit) {
-    val todaySets by viewModel.getSetsByDate(date).collectAsState(initial = emptyList())
-
-    // 草稿箱状态：临时存储用户的输入
-    val draftState = remember { mutableStateMapOf<BodyRegion, Pair<Int, String>>() }
-
-    // 当数据库数据加载后，同步到草稿箱
-    LaunchedEffect(todaySets) {
-        if (todaySets.isNotEmpty()) {
-            todaySets.forEach { set ->
-                draftState[set.region] = Pair(set.rpe ?: 0, set.note ?: "")
-            }
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("$date 训练记录", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
-            )
-        },
-        // --- 重点：固定在底部的保存按钮 ---
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 8.dp,
-                color = Color.White
-            ) {
-                Button(
-                    onClick = {
-                        viewModel.syncWorkoutSets(date, draftState.toMap())
-                        onBack() // 保存后返回
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("保存今日训练记录", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        },
-        containerColor = Color(0xFFF3F6FF)
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-
-            // 循环显示 8 个部位
-            items(BodyRegion.entries) { region ->
-                val state = draftState[region] ?: Pair(0, "")
-
-                WorkoutRegionCard(
-                    regionName = region.displayName,
-                    stars = state.first,
-                    note = state.second,
-                    onUpdate = { newStars, newNote ->
-                        draftState[region] = Pair(newStars, newNote)
-                    }
-                )
-            }
-
-            // 给列表底部留点空间，防止被 BottomBar 挡住
-            item { Spacer(modifier = Modifier.height(100.dp)) }
-        }
-    }
-}
-
-@Composable
-fun WorkoutRegionCard(
-    regionName: String,
-    stars: Int,
-    note: String,
-    onUpdate: (Int, String) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = regionName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-
-                // 纯文字打星组件
-                Row {
-                    repeat(5) { index ->
-                        val starIndex = index + 1
-                        Text(
-                            text = if (starIndex <= stars) "★" else "☆",
-                            fontSize = 26.sp,
-                            color = if (starIndex <= stars) Color(0xFFE67E22) else Color(0xFFD1D5DB),
-                            modifier = Modifier
-                                .padding(horizontal = 2.dp)
-                                .clickable { onUpdate(if (stars == starIndex) 0 else starIndex, note) }
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = note,
-                onValueChange = { onUpdate(stars, it) },
-                placeholder = { Text("录入动作、重量、组数...", color = Color.LightGray, fontSize = 14.sp) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp),
-                textStyle = TextStyle(fontSize = 15.sp),
-                shape = RoundedCornerShape(12.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFFF9FAFB),
-                    unfocusedContainerColor = Color(0xFFF9FAFB),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-        }
-    }
-
-}
-@Composable
-fun RecoveryTimerView(activeLoads: List<Pair<com.benhe.fitlog.model.BodyRegion, Float>>) {
-    // 找出负荷最高的部位作为恢复基准
-    val maxLoad = activeLoads.maxByOrNull { it.second }?.second ?: 0f
-
-    // 逻辑：假设每天恢复 15%。 剩余天数 = 当前负荷 / 0.15
-    val daysRemaining = (maxLoad / 0.15f)
-    val progress = (1f - (maxLoad / 1.5f)).coerceIn(0f, 1f)
-
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        color = Color(0xFFEEF2FF).copy(alpha = 0.6f),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("⏳ 恢复计时器", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5))
-                Text(
-                    text = if (daysRemaining < 0.1) "即将完全恢复" else "约需 ${String.format("%.1f", daysRemaining)} 天全复",
-                    fontSize = 11.sp,
-                    color = Color.Gray
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-            LinearProgressIndicator(
-                progress = progress ,
-                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                color = Color(0xFF6366F1),
-                trackColor = Color(0xFFE0E7FF)
-            )
-        }
-    }
-}
-
-
-
-
-
-

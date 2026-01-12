@@ -11,7 +11,16 @@ import java.time.LocalDate
 
 @Dao
 interface WorkoutDao {
+
+
     // --- 动作库 ---
+
+    @Query("SELECT * FROM workout_sets ORDER BY timestamp DESC")
+    fun getAllSets(): Flow<List<WorkoutSet>> // <--- 确认这里叫 getAllSets
+
+    @Query("SELECT * FROM workout_sets WHERE timestamp >= :startDate AND timestamp <= :endDate")
+    fun getSetsInDateRange(startDate: Long, endDate: Long): Flow<List<WorkoutSet>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExercises(exercises: List<ExerciseCatalog>)
 

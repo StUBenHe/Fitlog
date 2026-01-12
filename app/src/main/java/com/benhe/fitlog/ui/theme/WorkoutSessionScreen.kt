@@ -19,6 +19,9 @@ import androidx.compose.ui.unit.sp
 import com.benhe.fitlog.model.BodyRegion
 import com.benhe.fitlog.viewmodel.MainViewModel
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.style.TextAlign
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -142,6 +145,70 @@ fun StarRatingBar(rating: Int, onRatingChanged: (Int) -> Unit) {
                     .padding(horizontal = 2.dp)
                     .clickable { onRatingChanged(starIndex) }
             )
+        }
+    }
+}
+
+@Composable
+fun RecoveryDashboardView(
+    regionStatus: Map<BodyRegion, Float>
+) {
+    // 使用 Column 包裹所有部位
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(12.dp)
+    ) {
+        // 遍历所有 8 个部位
+        regionStatus.forEach { (region, status) ->
+            Row(
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 部位名称
+                Text(
+                    text = region.displayName,
+                    modifier = Modifier.width(50.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // 进度条背景
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(6.dp)
+                        .background(Color(0xFFE0E0E0), CircleShape) // 灰底
+                ) {
+                    // 恢复进度条（蓝色）
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(status) // 关键：控制进度
+                            .fillMaxHeight()
+                            .background(
+                                // 根据状态变色：低于 0.3 红色（疲劳），高于 0.8 绿色（充满活力）
+                                when {
+                                    status < 0.4f -> Color(0xFFFF5252)
+                                    status < 0.8f -> Color(0xFF4A90E2)
+                                    else -> Color(0xFF4CAF50)
+                                },
+                                CircleShape
+                            )
+                    )
+                }
+
+                // 百分比文字
+                Text(
+                    text = "${(status * 100).toInt()}%",
+                    modifier = Modifier.padding(start = 8.dp).width(35.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.End
+                )
+            }
         }
     }
 }

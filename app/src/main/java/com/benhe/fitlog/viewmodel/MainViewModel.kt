@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.benhe.fitlog.data.entity.WorkoutSet
+import com.benhe.fitlog.logic.LoadCalculator
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -34,11 +35,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * 2. 获取 8 大区块负荷状态
      * 解决 Cannot infer type 的关键：显式指定 emptyMap 的类型
      */
+// MainViewModel.kt
+
+    private val currentSleepHours = 8f
+    private val currentProtein = 100f
+
+    // MainViewModel.kt
+
+    // 这样 UI 就能通过 viewModel.bodyStatus 监听到最新的恢复状态
     val bodyStatus: StateFlow<Map<BodyRegion, Float>> = workoutRepository.getBodyStatusFlow()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyMap<BodyRegion, Float>() // ✅ 显式指定类型，解决报错
+            initialValue = BodyRegion.entries.associateWith { 1.0f } // 初始满血
         )
 
     /**
