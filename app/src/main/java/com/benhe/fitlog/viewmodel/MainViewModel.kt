@@ -1,17 +1,23 @@
 package com.benhe.fitlog.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.benhe.fitlog.data.db.AppDatabase
 import com.benhe.fitlog.data.db.DietRecord
 import com.benhe.fitlog.logic.HealthCalculator
+import com.benhe.fitlog.model.BodyRegion // ✅ 确保导入了模型
 import com.benhe.fitlog.model.DailyActivity
 import com.benhe.fitlog.model.LifeIntensity
 import com.benhe.fitlog.model.UserProfile
 import kotlinx.coroutines.Dispatchers
+// ✅ 必须增加以下 Flow 相关的导入
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -19,12 +25,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val dietDao = db.dietDao()
     private val dailyActivityDao = db.dailyActivityDao()
+    private val workoutDao = db.workoutDao()
+
+    // 1. 初始化 Repository
+    private val workoutRepository = com.benhe.fitlog.data.repository.WorkoutRepository(workoutDao)
 
     /**
-     * 1. 提取用户资料 (用于计算)
+     * 2. 获取 8 大区块负荷状态
+     * 解决 Cannot infer type 的关键：显式指定 emptyMap 的类型
+     */
+    val bodyStatus: StateFlow<Map<BodyRegion, Float>> = workoutRepository.getBodyStatusFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyMap<BodyRegion, Float>() // ✅ 显式指定类型，解决报错
+        )
+
+    /**
+     * 3. 提取用户资料 (用于计算)
      */
     private fun getUserProfile(): UserProfile {
-        val sharedPref = getApplication<Application>().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+        val sharedPref = getApplication<Application>().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         return UserProfile(
             weight = sharedPref.getString("weight", "70.0")?.toDoubleOrNull() ?: 70.0,
             height = sharedPref.getString("height", "180.0")?.toDoubleOrNull() ?: 180.0,
@@ -34,7 +55,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * 2. 计算今日消耗 (由 UI 调用)
+     * 4. 计算今日消耗 (由 UI 调用)
      */
     fun getTodayExpenditure(activity: DailyActivity?): Int {
         val profile = getUserProfile()
@@ -47,7 +68,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return HealthCalculator.calculateDailyExpenditure(
             bmr = bmr,
             intensity = activity?.intensity ?: LifeIntensity.NORMAL,
-            isAfterburnEnabled = activity?.isAfterburnEnabled ?: false // ✅ 这里的报错会因为修改了 Model 而消失
+            isAfterburnEnabled = activity?.isAfterburnEnabled ?: false
         )
     }
 
@@ -88,14 +109,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun getActivityForDate(date: String): Flow<DailyActivity?> =
         dailyActivityDao.getActivityByDate(date)
 
-    // ✅ 修改更新方法：增加 afterburn 参数，保证数据完整写入数据库
     fun updateActivityForDate(date: String, sleep: Float, intensity: LifeIntensity, afterburn: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             val record = DailyActivity(
                 date = date,
                 sleepHours = sleep,
                 intensity = intensity,
-                isAfterburnEnabled = afterburn // ✅ 写入后燃开关状态
+                isAfterburnEnabled = afterburn
             )
             dailyActivityDao.insertOrUpdateActivity(record)
         }

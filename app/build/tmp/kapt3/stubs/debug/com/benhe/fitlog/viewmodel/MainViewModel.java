@@ -1,6 +1,6 @@
 package com.benhe.fitlog.viewmodel;
 
-@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000p\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000e\n\u0000\n\u0002\u0010 \n\u0000\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0006\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\b\t\n\u0002\u0010\u0007\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000b\n\u0000\b\u0007\u0018\u00002\u00020\u0001B\r\u0012\u0006\u0010\u0002\u001a\u00020\u0003\u00a2\u0006\u0002\u0010\u0004J\u000e\u0010\u000b\u001a\u00020\f2\u0006\u0010\r\u001a\u00020\u000eJ\u0016\u0010\u000f\u001a\n\u0012\u0006\u0012\u0004\u0018\u00010\u00110\u00102\u0006\u0010\u0012\u001a\u00020\u0013J\u001a\u0010\u0014\u001a\u000e\u0012\n\u0012\b\u0012\u0004\u0012\u00020\u000e0\u00150\u00102\u0006\u0010\u0012\u001a\u00020\u0013J\u0010\u0010\u0016\u001a\u00020\u00172\b\u0010\u0018\u001a\u0004\u0018\u00010\u0011J\u0014\u0010\u0019\u001a\b\u0012\u0004\u0012\u00020\u001a0\u00102\u0006\u0010\u0012\u001a\u00020\u0013J\u0014\u0010\u001b\u001a\b\u0012\u0004\u0012\u00020\u001a0\u00102\u0006\u0010\u0012\u001a\u00020\u0013J\u0014\u0010\u001c\u001a\b\u0012\u0004\u0012\u00020\u001a0\u00102\u0006\u0010\u0012\u001a\u00020\u0013J\b\u0010\u001d\u001a\u00020\u001eH\u0002J>\u0010\u001f\u001a\u00020\f2\u0006\u0010 \u001a\u00020\u00132\u0006\u0010!\u001a\u00020\u00132\u0006\u0010\"\u001a\u00020\u00132\u0006\u0010#\u001a\u00020\u001a2\u0006\u0010$\u001a\u00020\u001a2\u0006\u0010%\u001a\u00020\u001a2\u0006\u0010\u0012\u001a\u00020\u0013J&\u0010&\u001a\u00020\f2\u0006\u0010\u0012\u001a\u00020\u00132\u0006\u0010\'\u001a\u00020(2\u0006\u0010)\u001a\u00020*2\u0006\u0010+\u001a\u00020,R\u000e\u0010\u0005\u001a\u00020\u0006X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0007\u001a\u00020\bX\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\t\u001a\u00020\nX\u0082\u0004\u00a2\u0006\u0002\n\u0000\u00a8\u0006-"}, d2 = {"Lcom/benhe/fitlog/viewmodel/MainViewModel;", "Landroidx/lifecycle/AndroidViewModel;", "application", "Landroid/app/Application;", "(Landroid/app/Application;)V", "dailyActivityDao", "Lcom/benhe/fitlog/data/DailyActivityDao;", "db", "Lcom/benhe/fitlog/data/db/AppDatabase;", "dietDao", "Lcom/benhe/fitlog/data/db/DietDao;", "deleteDietRecord", "", "record", "Lcom/benhe/fitlog/data/db/DietRecord;", "getActivityForDate", "Lkotlinx/coroutines/flow/Flow;", "Lcom/benhe/fitlog/model/DailyActivity;", "date", "", "getDietRecordsForDate", "", "getTodayExpenditure", "", "activity", "getTotalCaloriesForDate", "", "getTotalCarbsForDate", "getTotalProteinForDate", "getUserProfile", "Lcom/benhe/fitlog/model/UserProfile;", "saveDietRecord", "foodName", "category", "quantity", "calories", "protein", "carbs", "updateActivityForDate", "sleep", "", "intensity", "Lcom/benhe/fitlog/model/LifeIntensity;", "afterburn", "", "app_debug"})
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000\u008a\u0001\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\u0010$\n\u0002\u0018\u0002\n\u0002\u0010\u0007\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000e\n\u0000\n\u0002\u0010 \n\u0000\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0006\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\b\n\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000b\n\u0000\b\u0007\u0018\u00002\u00020\u0001B\r\u0012\u0006\u0010\u0002\u001a\u00020\u0003\u00a2\u0006\u0002\u0010\u0004J\u000e\u0010\u0016\u001a\u00020\u00172\u0006\u0010\u0018\u001a\u00020\u0019J\u0016\u0010\u001a\u001a\n\u0012\u0006\u0012\u0004\u0018\u00010\u001c0\u001b2\u0006\u0010\u001d\u001a\u00020\u001eJ\u001a\u0010\u001f\u001a\u000e\u0012\n\u0012\b\u0012\u0004\u0012\u00020\u00190 0\u001b2\u0006\u0010\u001d\u001a\u00020\u001eJ\u0010\u0010!\u001a\u00020\"2\b\u0010#\u001a\u0004\u0018\u00010\u001cJ\u0014\u0010$\u001a\b\u0012\u0004\u0012\u00020%0\u001b2\u0006\u0010\u001d\u001a\u00020\u001eJ\u0014\u0010&\u001a\b\u0012\u0004\u0012\u00020%0\u001b2\u0006\u0010\u001d\u001a\u00020\u001eJ\u0014\u0010\'\u001a\b\u0012\u0004\u0012\u00020%0\u001b2\u0006\u0010\u001d\u001a\u00020\u001eJ\b\u0010(\u001a\u00020)H\u0002J>\u0010*\u001a\u00020\u00172\u0006\u0010+\u001a\u00020\u001e2\u0006\u0010,\u001a\u00020\u001e2\u0006\u0010-\u001a\u00020\u001e2\u0006\u0010.\u001a\u00020%2\u0006\u0010/\u001a\u00020%2\u0006\u00100\u001a\u00020%2\u0006\u0010\u001d\u001a\u00020\u001eJ&\u00101\u001a\u00020\u00172\u0006\u0010\u001d\u001a\u00020\u001e2\u0006\u00102\u001a\u00020\t2\u0006\u00103\u001a\u0002042\u0006\u00105\u001a\u000206R#\u0010\u0005\u001a\u0014\u0012\u0010\u0012\u000e\u0012\u0004\u0012\u00020\b\u0012\u0004\u0012\u00020\t0\u00070\u0006\u00a2\u0006\b\n\u0000\u001a\u0004\b\n\u0010\u000bR\u000e\u0010\f\u001a\u00020\rX\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u000e\u001a\u00020\u000fX\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0010\u001a\u00020\u0011X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0012\u001a\u00020\u0013X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0014\u001a\u00020\u0015X\u0082\u0004\u00a2\u0006\u0002\n\u0000\u00a8\u00067"}, d2 = {"Lcom/benhe/fitlog/viewmodel/MainViewModel;", "Landroidx/lifecycle/AndroidViewModel;", "application", "Landroid/app/Application;", "(Landroid/app/Application;)V", "bodyStatus", "Lkotlinx/coroutines/flow/StateFlow;", "", "Lcom/benhe/fitlog/model/BodyRegion;", "", "getBodyStatus", "()Lkotlinx/coroutines/flow/StateFlow;", "dailyActivityDao", "Lcom/benhe/fitlog/data/DailyActivityDao;", "db", "Lcom/benhe/fitlog/data/db/AppDatabase;", "dietDao", "Lcom/benhe/fitlog/data/db/DietDao;", "workoutDao", "Lcom/benhe/fitlog/data/dao/WorkoutDao;", "workoutRepository", "Lcom/benhe/fitlog/data/repository/WorkoutRepository;", "deleteDietRecord", "", "record", "Lcom/benhe/fitlog/data/db/DietRecord;", "getActivityForDate", "Lkotlinx/coroutines/flow/Flow;", "Lcom/benhe/fitlog/model/DailyActivity;", "date", "", "getDietRecordsForDate", "", "getTodayExpenditure", "", "activity", "getTotalCaloriesForDate", "", "getTotalCarbsForDate", "getTotalProteinForDate", "getUserProfile", "Lcom/benhe/fitlog/model/UserProfile;", "saveDietRecord", "foodName", "category", "quantity", "calories", "protein", "carbs", "updateActivityForDate", "sleep", "intensity", "Lcom/benhe/fitlog/model/LifeIntensity;", "afterburn", "", "app_debug"})
 public final class MainViewModel extends androidx.lifecycle.AndroidViewModel {
     @org.jetbrains.annotations.NotNull()
     private final com.benhe.fitlog.data.db.AppDatabase db = null;
@@ -8,6 +8,17 @@ public final class MainViewModel extends androidx.lifecycle.AndroidViewModel {
     private final com.benhe.fitlog.data.db.DietDao dietDao = null;
     @org.jetbrains.annotations.NotNull()
     private final com.benhe.fitlog.data.DailyActivityDao dailyActivityDao = null;
+    @org.jetbrains.annotations.NotNull()
+    private final com.benhe.fitlog.data.dao.WorkoutDao workoutDao = null;
+    @org.jetbrains.annotations.NotNull()
+    private final com.benhe.fitlog.data.repository.WorkoutRepository workoutRepository = null;
+    
+    /**
+     * 2. 获取 8 大区块负荷状态
+     * 解决 Cannot infer type 的关键：显式指定 emptyMap 的类型
+     */
+    @org.jetbrains.annotations.NotNull()
+    private final kotlinx.coroutines.flow.StateFlow<java.util.Map<com.benhe.fitlog.model.BodyRegion, java.lang.Float>> bodyStatus = null;
     
     public MainViewModel(@org.jetbrains.annotations.NotNull()
     android.app.Application application) {
@@ -15,14 +26,23 @@ public final class MainViewModel extends androidx.lifecycle.AndroidViewModel {
     }
     
     /**
-     * 1. 提取用户资料 (用于计算)
+     * 2. 获取 8 大区块负荷状态
+     * 解决 Cannot infer type 的关键：显式指定 emptyMap 的类型
+     */
+    @org.jetbrains.annotations.NotNull()
+    public final kotlinx.coroutines.flow.StateFlow<java.util.Map<com.benhe.fitlog.model.BodyRegion, java.lang.Float>> getBodyStatus() {
+        return null;
+    }
+    
+    /**
+     * 3. 提取用户资料 (用于计算)
      */
     private final com.benhe.fitlog.model.UserProfile getUserProfile() {
         return null;
     }
     
     /**
-     * 2. 计算今日消耗 (由 UI 调用)
+     * 4. 计算今日消耗 (由 UI 调用)
      */
     public final int getTodayExpenditure(@org.jetbrains.annotations.Nullable()
     com.benhe.fitlog.model.DailyActivity activity) {
