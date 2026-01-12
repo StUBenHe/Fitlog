@@ -7,18 +7,18 @@ import androidx.lifecycle.viewModelScope
 import com.benhe.fitlog.data.db.AppDatabase
 import com.benhe.fitlog.data.db.DietRecord
 import com.benhe.fitlog.logic.HealthCalculator
-import com.benhe.fitlog.model.BodyRegion // ✅ 确保导入了模型
+import com.benhe.fitlog.model.BodyRegion
 import com.benhe.fitlog.model.DailyActivity
 import com.benhe.fitlog.model.LifeIntensity
 import com.benhe.fitlog.model.UserProfile
 import kotlinx.coroutines.Dispatchers
-// ✅ 必须增加以下 Flow 相关的导入
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.benhe.fitlog.data.entity.WorkoutSet
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -120,4 +120,63 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             dailyActivityDao.insertOrUpdateActivity(record)
         }
     }
+
+    // 获取指定日期的所有训练记录
+    fun getSetsByDate(date: String): Flow<List<WorkoutSet>> {
+        val localDate = java.time.LocalDate.parse(date)
+        val start = localDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val end = localDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
+        // 调用 Dao 里的范围查询
+        return workoutDao.getSetsByTimeRange(start, end)
+    }
+    // 在 MainViewModel.kt 中更新
+    fun saveWorkoutSet(date: String, region: BodyRegion, weight: Float, reps: Int, rpe: Int, note: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val timestamp = java.time.LocalDate.parse(date)
+                .atStartOfDay(java.time.ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+
+            // 逻辑：如果该部位今天已经有记录了，我们覆盖它（因为现在是“汇总模式”）
+            // 也可以简单地插入新的一条，反正 UI 只取最后一条。
+            val set = WorkoutSet(
+                sessionId = 0,
+                region = region,
+                exerciseId = note, // 我们直接用 exerciseId 这个 String 存你的手动备注
+                weight = weight,
+                reps = reps,
+                rpe = rpe, // 这里的 rpe 对应 1-5 星
+                timestamp = timestamp
+            )
+            workoutDao.insertSet(set)
+        }
+    }
+    fun syncWorkoutSets(date: String, records: Map<BodyRegion, Pair<Int, String>>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val localDate = java.time.LocalDate.parse(date)
+            val startOfDay = localDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val endOfDay = localDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
+
+            // 1. 先清理该日期所有旧记录
+            workoutDao.deleteSetsByDay(startOfDay, endOfDay)
+
+            // 2. 批量插入有内容的记录
+            records.forEach { (region, data) ->
+                if (data.first > 0 || data.second.isNotBlank()) {
+                    val set = WorkoutSet(
+                        sessionId = 0,             // 补全参数
+                        region = region,
+                        exerciseId = "manual_entry",// 补全参数
+                        weight = 0f,               // 补全参数
+                        reps = 0,                  // 补全参数
+                        rpe = data.first,
+                        note = data.second,
+                        timestamp = startOfDay
+                    )
+                    workoutDao.insertSet(set)
+                }
+            }
+        }
+    }
+
 }

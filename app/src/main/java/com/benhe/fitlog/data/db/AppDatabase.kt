@@ -24,7 +24,7 @@ import com.benhe.fitlog.data.converters.FitlogConverters
         WorkoutSession::class,
         WorkoutSet::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(FitlogConverters::class)

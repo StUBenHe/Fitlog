@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,14 +32,24 @@ import com.benhe.fitlog.ui.theme.FitlogTheme
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
 import com.benhe.fitlog.ui.DietScreen
-import com.benhe.fitlog.data.db.DietRecord
 import com.benhe.fitlog.model.LifeIntensity
 import com.benhe.fitlog.ui.theme.ActivityInputDialog
-import com.benhe.fitlog.model.DailyActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
-
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.text.TextStyle // 解决 TextStyle 报错
+import com.benhe.fitlog.model.BodyRegion // 解决 BodyRegion 报错
+import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.draw.clip
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -231,12 +240,13 @@ fun DayCard(
                     }
                 },
                 color = Color(0xFFEEF2FF),
-                onClick = onWorkoutClick // ✅ 这里现在会触发跳转
+                onClick = onWorkoutClick
             )
 
-            if (isToday && activeLoads.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                BodyLoadQuickView(activeLoads)
+// --- 新增：恢复计时器呈现区 ---
+            if (activeLoads.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                RecoveryTimerView(activeLoads)
             }
         }
     }
@@ -259,38 +269,6 @@ fun DayCard(
  * 新增加的训练详情页
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> Unit) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("$date 训练记录") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { /* 下一步：开发动作选择器 */ },
-                icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("添加动作") },
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("今日暂无训练记录，请点击右下角添加", color = Color.Gray)
-        }
-    }
-}
 
 @Composable
 fun ExpandedModuleItem(title: String, mainValue: String, subItems: List<Pair<String, String>>, color: Color, onClick: () -> Unit) {
@@ -384,3 +362,185 @@ fun BodyLoadQuickView(loads: List<Pair<com.benhe.fitlog.model.BodyRegion, Float>
         }
     }
 }
+
+/**
+ * 核心：训练详情页 (直接显示8个部位，无添加按钮)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> Unit) {
+    val todaySets by viewModel.getSetsByDate(date).collectAsState(initial = emptyList())
+
+    // 草稿箱状态：临时存储用户的输入
+    val draftState = remember { mutableStateMapOf<BodyRegion, Pair<Int, String>>() }
+
+    // 当数据库数据加载后，同步到草稿箱
+    LaunchedEffect(todaySets) {
+        if (todaySets.isNotEmpty()) {
+            todaySets.forEach { set ->
+                draftState[set.region] = Pair(set.rpe ?: 0, set.note ?: "")
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("$date 训练记录", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                    }
+                }
+            )
+        },
+        // --- 重点：固定在底部的保存按钮 ---
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 8.dp,
+                color = Color.White
+            ) {
+                Button(
+                    onClick = {
+                        viewModel.syncWorkoutSets(date, draftState.toMap())
+                        onBack() // 保存后返回
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("保存今日训练记录", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        containerColor = Color(0xFFF3F6FF)
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            // 循环显示 8 个部位
+            items(BodyRegion.entries) { region ->
+                val state = draftState[region] ?: Pair(0, "")
+
+                WorkoutRegionCard(
+                    regionName = region.displayName,
+                    stars = state.first,
+                    note = state.second,
+                    onUpdate = { newStars, newNote ->
+                        draftState[region] = Pair(newStars, newNote)
+                    }
+                )
+            }
+
+            // 给列表底部留点空间，防止被 BottomBar 挡住
+            item { Spacer(modifier = Modifier.height(100.dp)) }
+        }
+    }
+}
+
+@Composable
+fun WorkoutRegionCard(
+    regionName: String,
+    stars: Int,
+    note: String,
+    onUpdate: (Int, String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = regionName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+
+                // 纯文字打星组件
+                Row {
+                    repeat(5) { index ->
+                        val starIndex = index + 1
+                        Text(
+                            text = if (starIndex <= stars) "★" else "☆",
+                            fontSize = 26.sp,
+                            color = if (starIndex <= stars) Color(0xFFE67E22) else Color(0xFFD1D5DB),
+                            modifier = Modifier
+                                .padding(horizontal = 2.dp)
+                                .clickable { onUpdate(if (stars == starIndex) 0 else starIndex, note) }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = note,
+                onValueChange = { onUpdate(stars, it) },
+                placeholder = { Text("录入动作、重量、组数...", color = Color.LightGray, fontSize = 14.sp) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp),
+                textStyle = TextStyle(fontSize = 15.sp),
+                shape = RoundedCornerShape(12.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFF9FAFB),
+                    unfocusedContainerColor = Color(0xFFF9FAFB),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+        }
+    }
+
+}
+@Composable
+fun RecoveryTimerView(activeLoads: List<Pair<com.benhe.fitlog.model.BodyRegion, Float>>) {
+    // 找出负荷最高的部位作为恢复基准
+    val maxLoad = activeLoads.maxByOrNull { it.second }?.second ?: 0f
+
+    // 逻辑：假设每天恢复 15%。 剩余天数 = 当前负荷 / 0.15
+    val daysRemaining = (maxLoad / 0.15f)
+    val progress = (1f - (maxLoad / 1.5f)).coerceIn(0f, 1f)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        color = Color(0xFFEEF2FF).copy(alpha = 0.6f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("⏳ 恢复计时器", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5))
+                Text(
+                    text = if (daysRemaining < 0.1) "即将完全恢复" else "约需 ${String.format("%.1f", daysRemaining)} 天全复",
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            LinearProgressIndicator(
+                progress = progress ,
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                color = Color(0xFF6366F1),
+                trackColor = Color(0xFFE0E7FF)
+            )
+        }
+    }
+}
+
+
+
+
+
+

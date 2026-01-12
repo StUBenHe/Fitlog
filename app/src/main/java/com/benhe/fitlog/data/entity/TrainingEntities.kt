@@ -30,35 +30,16 @@ data class WorkoutSession(
     val note: String? = null
 )
 
-/**
- * 3. 组数记录表：每一组的具体重量和次数
- */
-@Entity(
-    tableName = "workout_sets",
-    foreignKeys = [
-        ForeignKey(
-            entity = WorkoutSession::class,
-            parentColumns = ["sessionId"],
-            childColumns = ["sessionId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index("sessionId"), Index("exerciseId")]
-)
+
+@Entity(tableName = "workout_sets")
 data class WorkoutSet(
     @PrimaryKey(autoGenerate = true) val setId: Long = 0,
     val sessionId: Long,
-    val exerciseId: String, // 关联动作库
-    val weight: Float,      // 公斤
-    val reps: Int,          // 次数
-    val rpe: Int? = null,   // 自感用力程度 (1-10)
-    val isWarmup: Boolean = false, // 是否为热身组（计算负荷时可剔除）
+    val region: BodyRegion,
+    val exerciseId: String,
+    val weight: Float,
+    val reps: Int,
+    val rpe: Int? = null,
+    val note: String? = null, // 新增字段
     val timestamp: Long = System.currentTimeMillis()
-){
-    // 添加这个函数，方便 LoadCalculator 调用
-    fun getLocalDate(): java.time.LocalDate {
-        return java.time.Instant.ofEpochMilli(timestamp)
-            .atZone(java.time.ZoneId.systemDefault())
-            .toLocalDate()
-    }
-}
+)
