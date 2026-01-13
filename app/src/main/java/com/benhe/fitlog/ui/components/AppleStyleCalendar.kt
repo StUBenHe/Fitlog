@@ -40,6 +40,7 @@ data class DayHealthStatus(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppleStyleCalendar(
+    statusMap: Map<String, DayHealthStatus>,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit
 ) {
@@ -102,7 +103,8 @@ fun AppleStyleCalendar(
         ) {
             items(days) { date ->
                 if (date != null) {
-                    val status = getSimulatedStatusForDate(date)
+                    val dateStr = date.toString() // "yyyy-MM-dd"
+                    val status = statusMap[dateStr] ?: DayHealthStatus(false, false, false)
 
                     DayCell(
                         date = date,
@@ -202,10 +204,13 @@ fun TinyCelticKnotStamp(
     isSleepGood: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val inactiveColor = Color(0xFFEEEEEE)
-    val dietColor = if (isDietGood) Color(0xFF4CAF50) else inactiveColor
-    val workoutColor = if (isWorkoutGood) Color(0xFF2196F3) else inactiveColor
-    val sleepColor = if (isSleepGood) Color(0xFF9C27B0) else inactiveColor
+    // ✅ 修改点：把 inactiveColor (未达标颜色) 调深一点，从 EEEEEE 改为 D0D0D0
+    // 这样即使没有数据，你也能看到三个灰色的空圈圈
+    val inactiveColor = Color(0xFFD0D0D0)
+
+    val dietColor = if (isDietGood) Color(0xFF4CAF50) else inactiveColor // 绿
+    val workoutColor = if (isWorkoutGood) Color(0xFF2196F3) else inactiveColor // 蓝
+    val sleepColor = if (isSleepGood) Color(0xFF9C27B0) else inactiveColor // 紫
 
     Canvas(modifier = modifier) {
         val strokeWidth = 3.dp.toPx()
@@ -216,7 +221,7 @@ fun TinyCelticKnotStamp(
         val offsetY = radius * 0.6f
         val offsetX = radius * 0.5f
 
-        // 上圆
+        // 1. 上圆 (饮食)
         drawCircle(
             color = dietColor,
             radius = radius,
@@ -224,7 +229,7 @@ fun TinyCelticKnotStamp(
             style = Stroke(width = strokeWidth)
         )
 
-        // 左下圆
+        // 2. 左下圆 (运动)
         drawCircle(
             color = workoutColor,
             radius = radius,
@@ -232,7 +237,7 @@ fun TinyCelticKnotStamp(
             style = Stroke(width = strokeWidth)
         )
 
-        // 右下圆
+        // 3. 右下圆 (睡眠)
         drawCircle(
             color = sleepColor,
             radius = radius,
@@ -242,13 +247,4 @@ fun TinyCelticKnotStamp(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-fun getSimulatedStatusForDate(date: LocalDate): DayHealthStatus {
 
-        return DayHealthStatus(
-            isDietGoalMet = false,
-            isWorkoutGoalMet = false,
-            isSleepGoalMet = false
-        )
-
-}

@@ -43,17 +43,17 @@ public final class AppDatabase_Impl extends AppDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(11) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(12) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `diet_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `foodName` TEXT NOT NULL, `category` TEXT NOT NULL, `quantity` TEXT NOT NULL, `calories` REAL NOT NULL, `protein` REAL NOT NULL, `carbs` REAL NOT NULL, `date` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `daily_activity` (`date` TEXT NOT NULL, `sleepHours` REAL NOT NULL, `intensity` TEXT NOT NULL, `isAfterburnEnabled` INTEGER NOT NULL, PRIMARY KEY(`date`))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `daily_activity` (`date` TEXT NOT NULL, `sleepHours` REAL NOT NULL, `intensity` TEXT NOT NULL, `totalCalories` INTEGER NOT NULL, `workoutDuration` INTEGER NOT NULL, `isAfterburnEnabled` INTEGER NOT NULL, PRIMARY KEY(`date`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `exercise_catalog` (`exerciseId` TEXT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `regionWeights` TEXT NOT NULL, PRIMARY KEY(`exerciseId`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `workout_sessions` (`sessionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `endTime` INTEGER, `totalVolume` REAL NOT NULL, `note` TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `workout_sets` (`setId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `region` TEXT NOT NULL, `exerciseId` TEXT NOT NULL, `weight` REAL NOT NULL, `reps` INTEGER NOT NULL, `rpe` INTEGER, `note` TEXT, `timestamp` INTEGER NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `body_stat_history` (`timestamp` INTEGER NOT NULL, `weight` REAL NOT NULL, `bodyFatRate` REAL NOT NULL, `dateString` TEXT NOT NULL, PRIMARY KEY(`timestamp`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2a31414e3e3439d00bcc07af14ff7e72')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3406b1de275441226e2bf16fadafe388')");
       }
 
       @Override
@@ -126,10 +126,12 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoDietRecords + "\n"
                   + " Found:\n" + _existingDietRecords);
         }
-        final HashMap<String, TableInfo.Column> _columnsDailyActivity = new HashMap<String, TableInfo.Column>(4);
+        final HashMap<String, TableInfo.Column> _columnsDailyActivity = new HashMap<String, TableInfo.Column>(6);
         _columnsDailyActivity.put("date", new TableInfo.Column("date", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsDailyActivity.put("sleepHours", new TableInfo.Column("sleepHours", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsDailyActivity.put("intensity", new TableInfo.Column("intensity", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsDailyActivity.put("totalCalories", new TableInfo.Column("totalCalories", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsDailyActivity.put("workoutDuration", new TableInfo.Column("workoutDuration", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsDailyActivity.put("isAfterburnEnabled", new TableInfo.Column("isAfterburnEnabled", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysDailyActivity = new HashSet<TableInfo.ForeignKey>(0);
         final HashSet<TableInfo.Index> _indicesDailyActivity = new HashSet<TableInfo.Index>(0);
@@ -205,7 +207,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "2a31414e3e3439d00bcc07af14ff7e72", "f55b4ca24167c50199c1ae33424b1fa0");
+    }, "3406b1de275441226e2bf16fadafe388", "bdfc61889fa4cfcccbcd8b8d7c528fc5");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;

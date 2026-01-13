@@ -3,7 +3,9 @@ package com.benhe.fitlog.ui
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,9 +30,11 @@ fun ProfileScreen(onNavigateToCalendar: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp)
-            .padding(top = 20.dp),
+            .verticalScroll(rememberScrollState()), // 加上滚动，防止小屏幕键盘遮挡
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        Spacer(modifier = Modifier.height(20.dp))
+
         Text(text = "建立你的健身档案", style = MaterialTheme.typography.headlineMedium)
 
         // --- 用户名输入 ---
@@ -39,7 +43,7 @@ fun ProfileScreen(onNavigateToCalendar: () -> Unit) {
             onValueChange = { username = it },
             label = { Text("怎么称呼你？") },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("例如：健身小达人") }
+            placeholder = { Text("例如：Ben") }
         )
 
         // --- 性别选择 ---
@@ -51,13 +55,13 @@ fun ProfileScreen(onNavigateToCalendar: () -> Unit) {
             Text("女")
         }
 
-        // --- 体重、身高、年龄 ---
+        // --- 体重、身高 ---
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = weight, onValueChange = { weight = it },
                 label = { Text("体重(kg)") },
                 modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
             OutlinedTextField(
                 value = height, onValueChange = { height = it },
@@ -67,6 +71,7 @@ fun ProfileScreen(onNavigateToCalendar: () -> Unit) {
             )
         }
 
+        // --- 年龄 ---
         OutlinedTextField(
             value = age, onValueChange = { age = it },
             label = { Text("年龄") },
@@ -74,39 +79,47 @@ fun ProfileScreen(onNavigateToCalendar: () -> Unit) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
+        // --- 体脂率 ---
         OutlinedTextField(
             value = bodyFat, onValueChange = { bodyFat = it },
             label = { Text("体脂率 % (可选)") },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Button(
             onClick = {
-                // 增加用户名判空校验
+                // 判空校验
                 if (username.isNotEmpty() && weight.isNotEmpty() && height.isNotEmpty() && age.isNotEmpty()) {
                     val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+
                     with(sharedPref.edit()) {
-                        putString("username", username) // 保存用户名
+                        // ✅ 关键修改：这里的 Key 必须和 RightProfileScreen 里读取的一致
+                        putString("name", username)      // 之前是 "username"，改为 "name"
                         putString("gender", gender)
                         putString("weight", weight)
                         putString("height", height)
                         putString("age", age)
-                        putString("body_fat", bodyFat)
+                        putString("bodyFat", bodyFat)    // 之前是 "body_fat"，改为 "bodyFat"
                         putBoolean("has_init", true)
                         apply()
                     }
+
                     Toast.makeText(context, "档案创建成功！", Toast.LENGTH_SHORT).show()
                     onNavigateToCalendar()
                 } else {
                     Toast.makeText(context, "除了体脂，其他都是必填的哦", Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(50.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
         ) {
             Text("开启健身之旅")
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
     }
 }

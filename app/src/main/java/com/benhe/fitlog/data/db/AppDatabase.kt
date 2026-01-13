@@ -30,7 +30,7 @@ import com.benhe.fitlog.data.dao.BodyStatDao
         WorkoutSet::class,
         BodyStatRecord::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(FitlogConverters::class)

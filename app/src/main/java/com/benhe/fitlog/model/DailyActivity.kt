@@ -21,6 +21,13 @@ data class DailyActivity(
     @PrimaryKey val date: String, // 格式：yyyy-MM-dd
     val sleepHours: Float = 8.0f,
     val intensity: LifeIntensity = LifeIntensity.NORMAL,
+
+    // 饮食摄入 (对应 totalCalories)
+    val totalCalories: Int = 0,
+
+    // 运动时长 (对应 workoutDuration)
+    val workoutDuration: Int = 0,
+
     val isAfterburnEnabled: Boolean = false // ✅ 添加这个字段，保存后燃开关状态
 )
 

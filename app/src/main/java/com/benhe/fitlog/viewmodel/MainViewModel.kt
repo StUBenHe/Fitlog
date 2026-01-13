@@ -36,7 +36,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
+import com.benhe.fitlog.ui.components.DayHealthStatus
 
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -48,7 +48,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // 假设你有 Database 单例
     private val dao = AppDatabase.getDatabase(application).bodyStatDao()
-
+    private val activityDao = AppDatabase.getDatabase(application).dailyActivityDao()
     // 1. 实时监听最新的一条数据 (给右侧个人档案用)
     val latestBodyStat: StateFlow<BodyStatRecord?> = dao.getLatestStat()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -72,6 +72,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val KEY_CUSTOM_FOODS = "custom_foods_list"
 
     private val _customFoodItems = MutableStateFlow<List<FoodItem>>(emptyList())
+
+    val calendarStatusMap: StateFlow<Map<String, DayHealthStatus>> = activityDao.getAllActivities() // 假设你的 DAO 有 getAllActivities 返回 Flow<List<DailyActivity>>
+        .map { list ->
+            list.associate { activity ->
+                // key 是日期字符串 "2026-01-13"
+                activity.date to DayHealthStatus(
+                    isDietGoalMet = activity.totalCalories > 0,   // 有摄入热量，饮食圈变绿
+                    isWorkoutGoalMet = activity.workoutDuration > 0, // 有运动时长，运动圈变蓝
+                    isSleepGoalMet = activity.sleepHours > 0f     // 有睡眠记录，睡眠圈变紫
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
 
     // 3. 【核心】对外暴露的完整分类列表 (合并了默认 + 自定义)
     // UI 层应该 observe 这个 flow，而不是直接用 FoodCatalog.categories
