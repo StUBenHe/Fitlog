@@ -1,6 +1,9 @@
 package com.benhe.fitlog
 
-
+import kotlin.math.roundToInt
+import com.benhe.fitlog.model.FoodItem
+import com.benhe.fitlog.model.FoodCategory
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.collectAsState
@@ -85,6 +88,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+//CalendarScreen（横向翻页日历 + 入口卡片）
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CalendarScreen(
@@ -128,6 +133,8 @@ fun CalendarScreen(
     }
 }
 
+
+//DayCard（单日综合面板：饮食/状态/训练 + 对话框入口）
 @Composable
 fun DayCard(
     date: String,
@@ -247,6 +254,8 @@ fun DayCard(
 
 }
 
+
+//可点击的通用 UI 组件：用于“饮食/状态/训练”以及食物条目展示
 @Composable
 fun ExpandedModuleItem(title: String, mainValue: String, subItems: List<Pair<String, String>>, color: Color, onClick: () -> Unit) {
     Surface(
@@ -272,6 +281,9 @@ fun ExpandedModuleItem(title: String, mainValue: String, subItems: List<Pair<Str
     }
 }
 
+//遍历 regionStatus 显示每个部位的恢复百分比 + 进度条
+//
+//根据状态值分段上色
 @Composable
 fun RecoveryDashboardView(regionStatus: Map<BodyRegion, Float>) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -296,6 +308,15 @@ fun RecoveryDashboardView(regionStatus: Map<BodyRegion, Float>) {
     }
 }
 
+
+
+//订阅当天 sets：getSetsByDate(date)
+//
+//draftState 保存每个 BodyRegion 的（rpe, note）
+//
+//LaunchedEffect(todaySets)：当 DB 数据变化时重建 draftState（初始化 + 回填）
+//
+//BottomBar 保存：syncWorkoutSets(date, draftState.toMap())
 @Composable
 fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> Unit) {
     val todaySets by viewModel.getSetsByDate(date).collectAsState(initial = emptyList())
@@ -331,6 +352,10 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> U
     }
 }
 
+
+//5 星（RPE/强度）可点选/取消
+//
+//备注 OutlinedTextField
 @Composable
 fun WorkoutRegionCard(name: String, stars: Int, note: String, onUpdate: (Int, String) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
@@ -360,16 +385,29 @@ fun WorkoutRegionCard(name: String, stars: Int, note: String, onUpdate: (Int, St
 }
 
 
+
+//状态录入弹窗：睡眠 + 强度 + 自动后燃展示）
+//
+//职责
+//
+//录入 sleep（Slider）
+//
+//录入 intensity（FilterChip）
+//
+//展示 isAfterburnAutoActive（只读信息）
+//
+//确认回调 onConfirm(sleep, intensity)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityInputDialog(
     initialSleep: Float,
     initialIntensity: LifeIntensity,
-    isAfterburnAutoActive: Boolean, // ✅ 传入由 ViewModel 计算出的自动状态
+    isAfterburnAutoActive: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: (Float, LifeIntensity) -> Unit // ✅ 去掉 Boolean 参数
+    onConfirm: (Float, LifeIntensity) -> Unit
 ) {
-    var sleep by remember { mutableFloatStateOf(initialSleep) }
+    // 1. 初始化 sleep，如果初始值不是0.5的倍数，这里最好也格式化一下
+    var sleep by remember { mutableFloatStateOf((initialSleep * 2).roundToInt() / 2f) }
     var intensity by remember { mutableStateOf(initialIntensity) }
 
     AlertDialog(
@@ -377,13 +415,45 @@ fun ActivityInputDialog(
         title = { Text("📝 记录今日状态", fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // 1. 睡眠时间... (Slider 部分保持不变)
-                Text("睡眠时间: ${String.format("%.1f", sleep)} 小时")
-                Slider(value = sleep, onValueChange = { sleep = it }, valueRange = 4f..12f)
+                // --- 修改点 A：显示格式化后的时间 ---
+                // 使用 %.1f 确保只显示一位小数 (例如 7.5)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("睡眠时间")
+                    Text(
+                        text = "${String.format("%.1f", sleep)} 小时",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // --- 修改点 B：Slider 步进逻辑 ---
+                Slider(
+                    value = sleep,
+                    onValueChange = { newValue ->
+                        // 核心逻辑：将连续的值乘以2，四舍五入，再除以2
+                        // 例子：6.2 -> 12.4 -> 12 -> 6.0
+                        // 例子：6.3 -> 12.6 -> 13 -> 6.5
+                        sleep = (newValue * 2).roundToInt() / 2f
+                    },
+                    valueRange = 4f..12f,
+                    // steps 计算公式：(总范围 / 步长) - 1
+                    // 范围是 8 (12-4)，步长 0.5，需要 16 段，所以 steps = 15
+                    steps = 15
+                )
+
+                // 辅助提示：显示最小和最大值
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("4h", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text("12h", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. 生活强度... (FilterChip 部分保持不变)
+                // 2. 生活强度 (保持不变)
                 Text("生活强度: ${intensity.displayName}", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -405,9 +475,7 @@ fun ActivityInputDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 3. 自动后燃效应展示
+                // 3. 自动后燃效应展示 (保持不变)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -431,7 +499,6 @@ fun ActivityInputDialog(
                             color = Color.Gray
                         )
                     }
-                    // ✅ 开关变为只读或去掉开关，改用图标展示状态
                     Icon(
                         imageVector = if (isAfterburnAutoActive) Icons.Default.CheckCircle else Icons.Default.Info,
                         contentDescription = null,

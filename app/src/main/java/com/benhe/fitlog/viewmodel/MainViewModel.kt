@@ -23,7 +23,11 @@ import com.benhe.fitlog.logic.LoadCalculator
 import kotlinx.coroutines.flow.*
 import java.time.LocalDate
 import java.time.ZoneId
-
+import com.benhe.fitlog.model.FoodCategory // 确保引入
+import com.benhe.fitlog.model.FoodItem     // 确保引入
+import com.benhe.fitlog.data.FoodCatalog   // 确保引入
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -44,7 +48,66 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val currentSleepHours = 8f
     private val currentProtein = 100f
 
+    private val gson = Gson()
+    private val PREFS_NAME = "user_prefs" // 和你原来的保持一致
+    private val KEY_CUSTOM_FOODS = "custom_foods_list"
 
+    private val _customFoodItems = MutableStateFlow<List<FoodItem>>(emptyList())
+
+    // 3. 【核心】对外暴露的完整分类列表 (合并了默认 + 自定义)
+    // UI 层应该 observe 这个 flow，而不是直接用 FoodCatalog.categories
+    val allFoodCategories: StateFlow<List<FoodCategory>> = _customFoodItems.map { customItems ->
+        val defaultList = FoodCatalog.categories.toMutableList() // 获取默认列表的拷贝
+
+        if (customItems.isNotEmpty()) {
+            // 创建自定义分类
+            val customCategory = FoodCategory(
+                id = "custom_user",
+                name = "我的常吃/自定义",
+                items = customItems.reversed() // 新加的排在前面
+            )
+            // 将自定义分类插到列表最前面
+            defaultList.add(0, customCategory)
+        }
+        defaultList
+    }.stateIn(viewModelScope, SharingStarted.Lazily, FoodCatalog.categories)
+
+    // 在 init 块中加载本地数据
+    init {
+        loadCustomFoods()
+    }
+    // --- 新增：加载自定义食物 ---
+    private fun loadCustomFoods() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val sharedPref = getApplication<Application>().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val json = sharedPref.getString(KEY_CUSTOM_FOODS, null)
+
+            if (json != null) {
+                try {
+                    val type = object : TypeToken<List<FoodItem>>() {}.type
+                    val list: List<FoodItem> = gson.fromJson(json, type)
+                    _customFoodItems.value = list
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    // --- 新增：添加自定义食物 ---
+    fun addCustomFood(item: FoodItem) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. 更新内存
+            val currentList = _customFoodItems.value.toMutableList()
+            currentList.add(item)
+            _customFoodItems.value = currentList
+
+            // 2. 保存到本地 (SharedPreferences)
+            val sharedPref = getApplication<Application>().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val jsonString = gson.toJson(currentList)
+            sharedPref.edit().putString(KEY_CUSTOM_FOODS, jsonString).apply()
+        }
+    }
 
 
 // 1. 获取基础数据流
