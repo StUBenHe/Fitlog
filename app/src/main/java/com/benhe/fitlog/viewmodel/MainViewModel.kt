@@ -26,8 +26,18 @@ import java.time.ZoneId
 import com.benhe.fitlog.model.FoodCategory // 确保引入
 import com.benhe.fitlog.model.FoodItem     // 确保引入
 import com.benhe.fitlog.data.FoodCatalog   // 确保引入
+import com.benhe.fitlog.model.BodyStatRecord
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.benhe.fitlog.ui.LeftStatsScreen
+import com.benhe.fitlog.ui.RightProfileScreen
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -36,7 +46,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val dailyActivityDao = db.dailyActivityDao()
     private val workoutDao = db.workoutDao()
 
-    // 1. 初始化 Repository
+    // 假设你有 Database 单例
+    private val dao = AppDatabase.getDatabase(application).bodyStatDao()
+
+    // 1. 实时监听最新的一条数据 (给右侧个人档案用)
+    val latestBodyStat: StateFlow<BodyStatRecord?> = dao.getLatestStat()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    // 2. 实时监听历史列表 (给左侧折线图用)
+    val bodyStatHistory: StateFlow<List<BodyStatRecord>> = dao.getHistoryStats()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     private val workoutRepository = com.benhe.fitlog.data.repository.WorkoutRepository(workoutDao)
 
     /**
@@ -317,5 +336,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onActivityConfirm(date: String, sleep: Float, intensity: LifeIntensity) {
         // 直接调用更新逻辑，去掉了手动 afterburn 参数
         updateActivityForDate(date, sleep, intensity)
+    }
+
+
+
+    // 保存数据：逻辑是取当前的整点时间
+    fun saveBodyStat(weight: Float, bodyFat: Float) {
+        viewModelScope.launch {
+            val now = LocalDateTime.now()
+            // 设为整点：分钟0，秒0，纳秒0
+            val onTheHour = now.withMinute(0).withSecond(0).withNano(0)
+
+            val timestamp = onTheHour.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val dateStr = onTheHour.format(DateTimeFormatter.ofPattern("MM-dd"))
+
+            val record = BodyStatRecord(
+                timestamp = timestamp,
+                weight = weight,
+                bodyFatRate = bodyFat,
+                dateString = dateStr
+            )
+            dao.insertStat(record)
+        }
     }
 }

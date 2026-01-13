@@ -1,4 +1,4 @@
-package com.benhe.fitlog.ui.theme
+package com.benhe.fitlog.ui.core
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -12,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -141,7 +140,7 @@ fun StarRatingBar(rating: Int, onRatingChanged: (Int) -> Unit) {
                 text = if (starIndex <= rating) "★" else "☆",
                 fontSize = 22.sp,
                 color = if (starIndex <= rating) Color(0xFFE67E22) else Color(0xFFBDC3C7),
-                modifier = androidx.compose.ui.Modifier
+                modifier = Modifier
                     .padding(horizontal = 2.dp)
                     .clickable { onRatingChanged(starIndex) }
             )

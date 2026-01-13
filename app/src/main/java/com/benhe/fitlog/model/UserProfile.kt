@@ -7,3 +7,4 @@ data class UserProfile(
     val age: Int,
     val gender: String
 )
+

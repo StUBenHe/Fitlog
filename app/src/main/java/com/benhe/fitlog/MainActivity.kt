@@ -1,9 +1,7 @@
 package com.benhe.fitlog
 
 import kotlin.math.roundToInt
-import com.benhe.fitlog.model.FoodItem
-import com.benhe.fitlog.model.FoodCategory
-import androidx.compose.material.icons.filled.Add
+
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.collectAsState
@@ -41,9 +39,12 @@ import com.benhe.fitlog.ui.DietScreen
 import com.benhe.fitlog.ui.ProfileScreen
 import com.benhe.fitlog.ui.screens.DailyDietListScreen
 import com.benhe.fitlog.ui.theme.FitlogTheme
-import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
 
+import android.widget.Toast
+import androidx.compose.runtime.Composable
+import com.benhe.fitlog.ui.MainScreen
+import com.benhe.fitlog.viewmodel.MainViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -54,31 +55,70 @@ class MainActivity : ComponentActivity() {
             FitlogTheme {
                 val viewModel: MainViewModel = viewModel()
                 val context = LocalContext.current
-                val sharedPref = remember { context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE) }
+                val sharedPref = remember { context.getSharedPreferences("user_prefs", MODE_PRIVATE) }
+
+                // 判断是否是第一次进入 App (用于显示初始设置 ProfileScreen)
                 val hasInit = remember { sharedPref.getBoolean("has_init", false) }
 
+                // 导航状态控制：
+                // 0 -> 初始设置 (ProfileScreen)
+                // 1 -> 主界面 (MainScreen: 含统计/日历/个人状态)
+                // 2 -> 饮食列表 (DailyDietListScreen)
+                // 3 -> 添加食物 (DietScreen)
+                // 4 -> 运动训练 (WorkoutSessionScreen)
                 var currentScreen by remember { mutableIntStateOf(if (hasInit) 1 else 0) }
+
+                // 记录当前选中的日期，用于子页面传参
                 var selectedDate by remember { mutableStateOf(LocalDate.now().toString()) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
                         when (currentScreen) {
-                            0 -> ProfileScreen(onNavigateToCalendar = { currentScreen = 1 })
-                            1 -> CalendarScreen(
+                            // 0. 初始设置页 (保持不变)
+                            0 -> ProfileScreen(
+                                onNavigateToCalendar = {
+                                    // 初始化完成后，进入主界面
+                                    currentScreen = 1
+                                }
+                            )
+
+                            // 1. 新的主界面 (集成底部导航栏)
+                            1 -> MainScreen(
                                 viewModel = viewModel,
-                                onNavigateToDiet = { date -> selectedDate = date; currentScreen = 2 },
-                                onNavigateToWorkout = { date -> selectedDate = date; currentScreen = 4 },
-                                onEditProfile = { currentScreen = 0 }
+                                // 当在左侧日历或中间日历点击"饮食"时触发
+                                onNavigateToDiet = { date ->
+                                    selectedDate = date
+                                    currentScreen = 2 // 跳转到饮食列表页
+                                },
+                                // 当在左侧日历或中间日历点击"运动"时触发
+                                onNavigateToWorkout = { date ->
+                                    selectedDate = date
+                                    currentScreen = 4 // 跳转到运动页
+                                },
+                                // 这里的 onEditProfile 可以留空，因为 RightProfileScreen 自己处理了弹窗
+                                onEditProfile = { }
                             )
+
+                            // 2. 饮食列表页 (全屏显示，覆盖底部栏)
                             2 -> DailyDietListScreen(
-                                date = selectedDate, viewModel = viewModel,
-                                onAddClick = { currentScreen = 3 }, onBack = { currentScreen = 1 }
+                                date = selectedDate,
+                                viewModel = viewModel,
+                                onAddClick = { currentScreen = 3 }, // 去搜索页
+                                onBack = { currentScreen = 1 }      // 返回主界面
                             )
+
+                            // 3. 添加食物搜索页
                             3 -> DietScreen(
-                                date = selectedDate, viewModel = viewModel, onBack = { currentScreen = 2 }
+                                date = selectedDate,
+                                viewModel = viewModel,
+                                onBack = { currentScreen = 2 }      // 返回饮食列表
                             )
+
+                            // 4. 运动训练页
                             4 -> WorkoutSessionScreen(
-                                date = selectedDate, viewModel = viewModel, onBack = { currentScreen = 1 }
+                                date = selectedDate,
+                                viewModel = viewModel,
+                                onBack = { currentScreen = 1 }      // 返回主界面
                             )
                         }
                     }
@@ -87,7 +127,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 
 //CalendarScreen（横向翻页日历 + 入口卡片）
 @OptIn(ExperimentalFoundationApi::class)

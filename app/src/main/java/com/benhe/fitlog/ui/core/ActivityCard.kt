@@ -1,4 +1,4 @@
-package com.benhe.fitlog.ui.theme
+package com.benhe.fitlog.ui.core
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

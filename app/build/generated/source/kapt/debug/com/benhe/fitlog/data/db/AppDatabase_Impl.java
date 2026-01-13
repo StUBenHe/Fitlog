@@ -13,6 +13,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import com.benhe.fitlog.data.DailyActivityDao;
 import com.benhe.fitlog.data.DailyActivityDao_Impl;
+import com.benhe.fitlog.data.dao.BodyStatDao;
+import com.benhe.fitlog.data.dao.BodyStatDao_Impl;
 import com.benhe.fitlog.data.dao.WorkoutDao;
 import com.benhe.fitlog.data.dao.WorkoutDao_Impl;
 import java.lang.Class;
@@ -30,6 +32,8 @@ import javax.annotation.processing.Generated;
 @Generated("androidx.room.RoomProcessor")
 @SuppressWarnings({"unchecked", "deprecation"})
 public final class AppDatabase_Impl extends AppDatabase {
+  private volatile BodyStatDao _bodyStatDao;
+
   private volatile DietDao _dietDao;
 
   private volatile DailyActivityDao _dailyActivityDao;
@@ -39,7 +43,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(10) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(11) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `diet_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `foodName` TEXT NOT NULL, `category` TEXT NOT NULL, `quantity` TEXT NOT NULL, `calories` REAL NOT NULL, `protein` REAL NOT NULL, `carbs` REAL NOT NULL, `date` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)");
@@ -47,8 +51,9 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `exercise_catalog` (`exerciseId` TEXT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `regionWeights` TEXT NOT NULL, PRIMARY KEY(`exerciseId`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `workout_sessions` (`sessionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `endTime` INTEGER, `totalVolume` REAL NOT NULL, `note` TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `workout_sets` (`setId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `region` TEXT NOT NULL, `exerciseId` TEXT NOT NULL, `weight` REAL NOT NULL, `reps` INTEGER NOT NULL, `rpe` INTEGER, `note` TEXT, `timestamp` INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `body_stat_history` (`timestamp` INTEGER NOT NULL, `weight` REAL NOT NULL, `bodyFatRate` REAL NOT NULL, `dateString` TEXT NOT NULL, PRIMARY KEY(`timestamp`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '87ec913c6e921d9395f49069d4dc268e')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2a31414e3e3439d00bcc07af14ff7e72')");
       }
 
       @Override
@@ -58,6 +63,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("DROP TABLE IF EXISTS `exercise_catalog`");
         db.execSQL("DROP TABLE IF EXISTS `workout_sessions`");
         db.execSQL("DROP TABLE IF EXISTS `workout_sets`");
+        db.execSQL("DROP TABLE IF EXISTS `body_stat_history`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -183,9 +189,23 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoWorkoutSets + "\n"
                   + " Found:\n" + _existingWorkoutSets);
         }
+        final HashMap<String, TableInfo.Column> _columnsBodyStatHistory = new HashMap<String, TableInfo.Column>(4);
+        _columnsBodyStatHistory.put("timestamp", new TableInfo.Column("timestamp", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBodyStatHistory.put("weight", new TableInfo.Column("weight", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBodyStatHistory.put("bodyFatRate", new TableInfo.Column("bodyFatRate", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBodyStatHistory.put("dateString", new TableInfo.Column("dateString", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysBodyStatHistory = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesBodyStatHistory = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoBodyStatHistory = new TableInfo("body_stat_history", _columnsBodyStatHistory, _foreignKeysBodyStatHistory, _indicesBodyStatHistory);
+        final TableInfo _existingBodyStatHistory = TableInfo.read(db, "body_stat_history");
+        if (!_infoBodyStatHistory.equals(_existingBodyStatHistory)) {
+          return new RoomOpenHelper.ValidationResult(false, "body_stat_history(com.benhe.fitlog.model.BodyStatRecord).\n"
+                  + " Expected:\n" + _infoBodyStatHistory + "\n"
+                  + " Found:\n" + _existingBodyStatHistory);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "87ec913c6e921d9395f49069d4dc268e", "0896ecdb625ce9ecf8c1d74e4b000f51");
+    }, "2a31414e3e3439d00bcc07af14ff7e72", "f55b4ca24167c50199c1ae33424b1fa0");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -196,7 +216,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "diet_records","daily_activity","exercise_catalog","workout_sessions","workout_sets");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "diet_records","daily_activity","exercise_catalog","workout_sessions","workout_sets","body_stat_history");
   }
 
   @Override
@@ -210,6 +230,7 @@ public final class AppDatabase_Impl extends AppDatabase {
       _db.execSQL("DELETE FROM `exercise_catalog`");
       _db.execSQL("DELETE FROM `workout_sessions`");
       _db.execSQL("DELETE FROM `workout_sets`");
+      _db.execSQL("DELETE FROM `body_stat_history`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -224,6 +245,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   @NonNull
   protected Map<Class<?>, List<Class<?>>> getRequiredTypeConverters() {
     final HashMap<Class<?>, List<Class<?>>> _typeConvertersMap = new HashMap<Class<?>, List<Class<?>>>();
+    _typeConvertersMap.put(BodyStatDao.class, BodyStatDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(DietDao.class, DietDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(DailyActivityDao.class, DailyActivityDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(WorkoutDao.class, WorkoutDao_Impl.getRequiredConverters());
@@ -243,6 +265,20 @@ public final class AppDatabase_Impl extends AppDatabase {
       @NonNull final Map<Class<? extends AutoMigrationSpec>, AutoMigrationSpec> autoMigrationSpecs) {
     final List<Migration> _autoMigrations = new ArrayList<Migration>();
     return _autoMigrations;
+  }
+
+  @Override
+  public BodyStatDao bodyStatDao() {
+    if (_bodyStatDao != null) {
+      return _bodyStatDao;
+    } else {
+      synchronized(this) {
+        if(_bodyStatDao == null) {
+          _bodyStatDao = new BodyStatDao_Impl(this);
+        }
+        return _bodyStatDao;
+      }
+    }
   }
 
   @Override
