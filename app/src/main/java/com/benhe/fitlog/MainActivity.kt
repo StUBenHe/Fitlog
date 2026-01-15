@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.benhe.fitlog.logic.DateUtils
+import com.benhe.fitlog.util.DateUtils
 import com.benhe.fitlog.model.BodyRegion
 import com.benhe.fitlog.model.LifeIntensity
 import com.benhe.fitlog.ui.DietScreen
@@ -41,7 +41,6 @@ import com.benhe.fitlog.ui.screens.DailyDietListScreen
 import com.benhe.fitlog.ui.theme.FitlogTheme
 import java.time.LocalDate
 
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import com.benhe.fitlog.ui.MainScreen
 import com.benhe.fitlog.viewmodel.MainViewModel

@@ -1,8 +1,7 @@
 package com.benhe.fitlog.data.repository
 
-import com.benhe.fitlog.data.dao.WorkoutDao
-import com.benhe.fitlog.data.entity.WorkoutSet
-import com.benhe.fitlog.model.BodyRegion
+import com.benhe.fitlog.data.local.dao.WorkoutDao
+import com.benhe.fitlog.data.local.entiy.WorkoutSet
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.ZoneId

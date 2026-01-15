@@ -4,9 +4,9 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.benhe.fitlog.data.db.AppDatabase
-import com.benhe.fitlog.data.db.DietRecord
-import com.benhe.fitlog.logic.HealthCalculator
+import com.benhe.fitlog.data.local.AppDatabase
+import com.benhe.fitlog.data.local.entiy.DietRecord
+import com.benhe.fitlog.util.HealthCalculator
 import com.benhe.fitlog.model.BodyRegion
 import com.benhe.fitlog.model.DailyActivity
 import com.benhe.fitlog.model.LifeIntensity
@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.benhe.fitlog.data.entity.WorkoutSet
-import com.benhe.fitlog.logic.LoadCalculator
+import com.benhe.fitlog.data.local.entiy.WorkoutSet
+import com.benhe.fitlog.util.LoadCalculator
 import kotlinx.coroutines.flow.*
 import java.time.LocalDate
 import java.time.ZoneId
@@ -29,11 +29,6 @@ import com.benhe.fitlog.data.FoodCatalog   // 确保引入
 import com.benhe.fitlog.model.BodyStatRecord
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.benhe.fitlog.ui.LeftStatsScreen
-import com.benhe.fitlog.ui.RightProfileScreen
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.benhe.fitlog.ui.components.DayHealthStatus

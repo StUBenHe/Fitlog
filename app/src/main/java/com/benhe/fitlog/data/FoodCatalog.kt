@@ -24,7 +24,16 @@ object FoodCatalog {
             items = listOf(
                 FoodItem("chicken_breast", "鸡胸肉", "g", "一副约150-200g", 165.0, 31.0, 3.6, 0.0),
                 FoodItem("chicken_leg", "鸡腿肉", "g", "一只大鸡腿约150g", 210.0, 24.0, 12.0, 0.0),
-                FoodItem("chicken_leg_no_skin", "去皮鸡腿", "g", "去皮更低脂", 120.0, 20.0, 4.0, 0.0),
+                FoodItem(
+                    "chicken_leg_no_skin",
+                    "去皮鸡腿",
+                    "g",
+                    "去皮更低脂",
+                    120.0,
+                    20.0,
+                    4.0,
+                    0.0
+                ),
                 FoodItem("beef", "牛肉", "g", "一张名片大小约50g", 250.0, 26.0, 15.0, 0.0),
                 FoodItem("fish", "一般鱼肉", "g", "一整条黄鱼约200g", 100.0, 18.0, 2.5, 0.0),
                 FoodItem("salmon", "三文鱼", "g", "两指宽约60g", 208.0, 20.0, 13.0, 0.0),
