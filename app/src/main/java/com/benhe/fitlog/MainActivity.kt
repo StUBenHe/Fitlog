@@ -111,11 +111,18 @@ fun MainContainerScreen(viewModel: MainViewModel) {
                             label = { Text(item.title) },
                             selected = selected,
                             onClick = {
+                                // 不再需要 if/else 判断，所有按钮统一处理
                                 navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
+                                    // 【核心修复】
+                                    // 将弹出目标固定为 Home 路由。
+                                    // 这意味着无论你点哪个 Tab，都会先回到 Home 这个基准点，
+                                    // 保证了返回栈的稳定，解决了点击后应用消失的问题。
+                                    popUpTo(BottomNavItem.Home.route) {
                                         saveState = true
                                     }
+                                    // 保持单例模式，避免重复创建页面实例
                                     launchSingleTop = true
+                                    // 恢复之前的状态（例如滚动位置）
                                     restoreState = true
                                 }
                             },
@@ -156,14 +163,15 @@ fun MainContainerScreen(viewModel: MainViewModel) {
             }
 
             composable(BottomNavItem.Workout.route) {
+                // 获取今天的日期，用于回显
                 val today = LocalDate.now().toString()
+                // 显示锻炼记录主界面
                 WorkoutSessionScreen(
                     date = today,
-                    viewModel = viewModel,
-                    onBack = { navigateToHome() } // 修复：使用安全的返回首页方式
+                    viewModel = viewModel
+                    // 注意：这里不需要 onBack 参数了，因为这是一级页面
                 )
             }
-
             composable(BottomNavItem.Profile.route) {
                 // 修复：根据初始化状态显示不同页面
                 val currentHasInit = sharedPref.getBoolean("has_init", false)
@@ -201,7 +209,7 @@ fun MainContainerScreen(viewModel: MainViewModel) {
                 WorkoutSessionScreen(
                     date = date,
                     viewModel = viewModel,
-                    onBack = { navigateToHome() } // 修复：使用安全的返回首页方式
+
                 )
             }
         }

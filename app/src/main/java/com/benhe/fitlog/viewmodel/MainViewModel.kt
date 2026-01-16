@@ -31,7 +31,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
+import com.benhe.fitlog.data.local.dao.WorkoutDao
+import kotlinx.coroutines.flow.firstOrNull // 必须导入这个扩展函数
+import androidx.lifecycle.ViewModel
+import com.benhe.fitlog.data.local.entiy.WorkoutSession
 
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -40,6 +43,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val dietDao = db.dietDao()
     private val dailyActivityDao = db.dailyActivityDao()
     private val workoutDao = db.workoutDao()
+    private val bodyStatDao = db.bodyStatDao()
+
 
     // 假设你有 Database 单例
     private val dao = AppDatabase.getDatabase(application).bodyStatDao()
@@ -109,7 +114,79 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // --- 新增：添加自定义食物 ---
+    // --- 新增：添加自定义食物 --
+    // -
+    /**
+     * 【修复后的核心方法】同步保存某一天的训练记录。
+     * 采用“先查父(Session)，后建子(Set)”的策略，解决外键约束崩溃问题。
+     */
+    fun syncWorkoutSets(dateString: String, drafts: Map<BodyRegion, Pair<Int, String>>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. 【准备工作：提前计算好所有需要的时间变量】
+            val targetDate = LocalDate.parse(dateString)
+            val zoneId = ZoneId.systemDefault()
+            val now = LocalDateTime.now()
+
+            // 计算那一天的开始和结束时间戳 (用于删除旧数据和创建新Session)
+            // 【关键调整】把 startOfDay 的计算移到这里
+            val startOfDay = targetDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
+            val endOfDay = startOfDay + 86400000L - 1
+
+            // 计算用于子表 WorkoutSet 的具体时间戳
+            val timestampForSet = if (targetDate.isEqual(now.toLocalDate())) {
+                // 如果是今天，用当前时间的整点
+                now.withMinute(0).withSecond(0).withNano(0)
+                    .atZone(zoneId).toInstant().toEpochMilli()
+            } else {
+                // 如果是补录过去，统一用那天晚上的 20:00
+                targetDate.atTime(20, 0)
+                    .atZone(zoneId).toInstant().toEpochMilli()
+            }
+
+            // 2. 获取或创建真实存在的父 Session ID
+            // 使用 firstOrNull() 从 Flow 中获取最新的 Session 数据
+            var session = workoutDao.getSessionByDate(targetDate).firstOrNull()
+
+            val finalSessionId: Long = if (session != null) {
+                // 场景 A: 数据库里已经有了那一天的 Session，直接用它的 ID
+                session.sessionId
+            } else {
+                // 场景 B: 还没有那一天的 Session，创建一个新的
+                // 【核心修复】：现在可以在这里安全使用 startOfDay 了
+                val newSession = WorkoutSession(
+                    date = targetDate,
+                    startTime = startOfDay // <-- 这里现在可以正常引用了
+                )
+                // 插入数据库，并【务必】获取返回的新 ID
+                workoutDao.insertSession(newSession)
+            }
+
+            // 3. 删除旧数据 (覆盖保存逻辑)
+            // 执行按天删除操作，这里也可以正常使用 startOfDay 和 endOfDay
+            workoutDao.deleteSetsByDay(startOfDay, endOfDay)
+
+            // 4. 构建并插入新的子记录列表
+            drafts.forEach { (region, data) ->
+                // 只处理有有效数据（评级>0 或 有笔记）的记录
+                if (data.first > 0 || data.second.isNotBlank()) {
+                    val newSet = WorkoutSet(
+                        sessionId = finalSessionId, // 【关键修复】：填入真实的父 ID
+                        region = region,
+                        rpe = data.first,
+                        note = data.second,
+                        timestamp = timestampForSet,
+                        // 其他必要字段给予默认值
+                        weight = 0f,
+                        reps = 0,
+                        exerciseId = "manual"
+                    )
+                    // 执行插入操作
+                    workoutDao.insertSet(newSet)
+                }
+            }
+        }
+    }
+
     fun addCustomFood(item: FoodItem) {
         viewModelScope.launch(Dispatchers.IO) {
             // 1. 更新内存
@@ -276,47 +353,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    fun syncWorkoutSets(date: String, records: Map<BodyRegion, Pair<Int, String>>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val selectedLocalDate = LocalDate.parse(date)
-            val now = java.time.LocalDateTime.now()
-
-            // ✅ 修正：对齐整点时间戳
-            val timestamp = if (selectedLocalDate.isEqual(now.toLocalDate())) {
-                // 场景：记录今天 -> 取当前小时的整点（例如 22:35 -> 22:00）
-                now.withMinute(0).withSecond(0).withNano(0)
-                    .atZone(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-            } else {
-                // 场景：补录过去 -> 默认取那天晚上的 20:00
-                selectedLocalDate.atTime(20, 0)
-                    .atZone(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-            }
-
-            // 删除旧记录逻辑 (按天范围删除)
-            val startOfDay = selectedLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val endOfDay = startOfDay + 86400000L - 1
-            workoutDao.deleteSetsByDay(startOfDay, endOfDay)
-
-            // 批量插入
-            records.forEach { (region, data) ->
-                if (data.first > 0 || data.second.isNotBlank()) {
-                    workoutDao.insertSet(WorkoutSet(
-                        region = region,
-                        rpe = data.first,
-                        note = data.second,
-                        timestamp = timestamp, // ✅ 存入整点时间戳
-                        weight = 0f, reps = 0, sessionId = 0, exerciseId = "manual"
-                    ))
-                }
-            }
-        }
-    }
-
-    // 修正获取 Profile 逻辑，防止单位错误
     private fun getUserProfile(): UserProfile {
         val sharedPref = getApplication<Application>().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         var weight = sharedPref.getString("weight", "70.0")?.toDoubleOrNull() ?: 70.0

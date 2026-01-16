@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 
-fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> Unit) {
+fun WorkoutSessionScreen(date: String, viewModel: MainViewModel ) {
     // 1. 观察数据库。注意：确保 ViewModel 里的 getSetsByDate 逻辑正确
     val todaySets by viewModel.getSetsByDate(date).collectAsState(initial = emptyList())
 
@@ -44,30 +44,30 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> U
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("$date 训练记录", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "返回") } },
+                title = { Text("$date 训练", fontWeight = FontWeight.Bold) },
+                // 【修改点2】移除了 navigationIcon = { ...返回箭头... }
+
+                // 【修改点3】在 actions 中添加“保存”按钮
                 actions = {
-                    // 右上角也可以放个重置按钮，清空当天全部
+                    // 原有的清空按钮可以保留
                     TextButton(onClick = { draftState.clear() }) {
-                        Text("全部清空", color = Color.Red)
+                        Text("清空", color = Color.Red)
+                    }
+                    // 新增的保存按钮
+                    TextButton(
+                        onClick = {
+                            // 点击只需调用 ViewModel 保存，无需跳转
+                            viewModel.syncWorkoutSets(date, draftState.toMap())
+                            // 可选：可以在这里加一个 Toast 提示保存成功
+                            // Toast.makeText(LocalContext.current, "保存成功", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Text("保存", fontWeight = FontWeight.Bold)
                     }
                 }
             )
         },
-        bottomBar = {
-            Surface(modifier = Modifier.fillMaxWidth(), shadowElevation = 8.dp) {
-                Button(
-                    onClick = {
-                        viewModel.syncWorkoutSets(date, draftState.toMap())
-                        onBack()
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("保存记录", fontWeight = FontWeight.Bold)
-                }
-            }
-        }
+
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).padding(horizontal = 16.dp)) {
             item { Spacer(modifier = Modifier.height(10.dp)) }
