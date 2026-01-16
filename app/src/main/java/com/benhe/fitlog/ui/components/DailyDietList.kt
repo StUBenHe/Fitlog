@@ -1,4 +1,4 @@
-package com.benhe.fitlog.ui.screens
+package com.benhe.fitlog.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

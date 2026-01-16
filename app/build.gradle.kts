@@ -34,6 +34,12 @@ android {
 }
 
 dependencies {
+
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    val nav_version = "2.7.7" // 或最新版本
+    implementation("androidx.navigation:navigation-compose:$nav_version")
+    // 使用 Material 3 的扩展图标（如果需要更多图标）
+    implementation("androidx.compose.material:material-icons-extended:1.6.3")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")

@@ -2,7 +2,6 @@ package com.benhe.fitlog.ui.components
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,16 +10,14 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft // ✅ 修改了这里
-import androidx.compose.material.icons.filled.KeyboardArrowRight // ✅ 修改了这里
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,19 +25,13 @@ import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import kotlin.random.Random
 
-// 数据模型
-data class DayHealthStatus(
-    val isDietGoalMet: Boolean,
-    val isWorkoutGoalMet: Boolean,
-    val isSleepGoalMet: Boolean
-)
+// ✅ 已删除 data class DayHealthStatus
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppleStyleCalendar(
-    statusMap: Map<String, DayHealthStatus>,
+    // ✅ 已删除 statusMap 参数
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit
 ) {
@@ -103,13 +94,12 @@ fun AppleStyleCalendar(
         ) {
             items(days) { date ->
                 if (date != null) {
-                    val dateStr = date.toString() // "yyyy-MM-dd"
-                    val status = statusMap[dateStr] ?: DayHealthStatus(false, false, false)
+                    // ✅ 已删除获取 status 的逻辑
 
                     DayCell(
                         date = date,
                         isSelected = date == selectedDate,
-                        status = status,
+                        // ✅ 已删除 status 参数传递
                         onClick = { onDateSelected(date) }
                     )
                 } else {
@@ -133,7 +123,6 @@ fun CalendarHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onPreviousClick) {
-            // ✅ 修改了这里：去掉了 AutoMirrored，使用通用的 Default/Filled
             Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "上个月")
         }
 
@@ -144,7 +133,6 @@ fun CalendarHeader(
         )
 
         IconButton(onClick = onNextClick) {
-            // ✅ 修改了这里
             Icon(Icons.Default.KeyboardArrowRight, contentDescription = "下个月")
         }
     }
@@ -155,7 +143,7 @@ fun CalendarHeader(
 fun DayCell(
     date: LocalDate,
     isSelected: Boolean,
-    status: DayHealthStatus,
+    // ✅ 已删除 status: DayHealthStatus 参数
     onClick: () -> Unit
 ) {
     val isToday = date == LocalDate.now()
@@ -168,15 +156,9 @@ fun DayCell(
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        // 1. 绘制凯尔特结印章
-        TinyCelticKnotStamp(
-            isDietGood = status.isDietGoalMet,
-            isWorkoutGood = status.isWorkoutGoalMet,
-            isSleepGood = status.isSleepGoalMet,
-            modifier = Modifier.fillMaxSize(0.85f)
-        )
+        // ✅ 已删除 TinyCelticKnotStamp 的调用
 
-        // 2. 日期数字
+        // 1. 日期数字
         Text(
             text = date.dayOfMonth.toString(),
             fontSize = 14.sp,
@@ -184,7 +166,7 @@ fun DayCell(
             color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Black
         )
 
-        // 今天的小圆点标记
+        // 2. 今天的小圆点标记
         if (isToday) {
             Box(
                 modifier = Modifier
@@ -196,55 +178,4 @@ fun DayCell(
         }
     }
 }
-
-@Composable
-fun TinyCelticKnotStamp(
-    isDietGood: Boolean,
-    isWorkoutGood: Boolean,
-    isSleepGood: Boolean,
-    modifier: Modifier = Modifier
-) {
-    // ✅ 修改点：把 inactiveColor (未达标颜色) 调深一点，从 EEEEEE 改为 D0D0D0
-    // 这样即使没有数据，你也能看到三个灰色的空圈圈
-    val inactiveColor = Color(0xFFD0D0D0)
-
-    val dietColor = if (isDietGood) Color(0xFF4CAF50) else inactiveColor // 绿
-    val workoutColor = if (isWorkoutGood) Color(0xFF2196F3) else inactiveColor // 蓝
-    val sleepColor = if (isSleepGood) Color(0xFF9C27B0) else inactiveColor // 紫
-
-    Canvas(modifier = modifier) {
-        val strokeWidth = 3.dp.toPx()
-        val radius = size.minDimension / 3.8f
-        val centerX = size.width / 2
-        val centerY = size.height / 2
-
-        val offsetY = radius * 0.6f
-        val offsetX = radius * 0.5f
-
-        // 1. 上圆 (饮食)
-        drawCircle(
-            color = dietColor,
-            radius = radius,
-            center = Offset(centerX, centerY - offsetY),
-            style = Stroke(width = strokeWidth)
-        )
-
-        // 2. 左下圆 (运动)
-        drawCircle(
-            color = workoutColor,
-            radius = radius,
-            center = Offset(centerX - offsetX * 1.5f, centerY + offsetY),
-            style = Stroke(width = strokeWidth)
-        )
-
-        // 3. 右下圆 (睡眠)
-        drawCircle(
-            color = sleepColor,
-            radius = radius,
-            center = Offset(centerX + offsetX * 1.5f, centerY + offsetY),
-            style = Stroke(width = strokeWidth)
-        )
-    }
-}
-
 

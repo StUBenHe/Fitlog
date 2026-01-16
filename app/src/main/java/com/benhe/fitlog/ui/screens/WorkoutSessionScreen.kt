@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+
 fun WorkoutSessionScreen(date: String, viewModel: MainViewModel, onBack: () -> Unit) {
     // 1. 观察数据库。注意：确保 ViewModel 里的 getSetsByDate 逻辑正确
     val todaySets by viewModel.getSetsByDate(date).collectAsState(initial = emptyList())
@@ -106,7 +107,7 @@ fun WorkoutRegionCard(
                         }
                     }
                 }
-                // 星星逻辑... (保持不变)
+
                 Row {
                     repeat(5) { i ->
                         val s = i + 1

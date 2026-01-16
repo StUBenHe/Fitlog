@@ -29,7 +29,6 @@ fun LeftStatsScreen(
     onNavigateToWorkout: (String) -> Unit
 ) {
     val historyData by viewModel.bodyStatHistory.collectAsState()
-    val calendarStatusMap by viewModel.calendarStatusMap.collectAsState()
     var selectedCalendarDate by remember { mutableStateOf(LocalDate.now()) }
     var showWeight by remember { mutableStateOf(true) }
 
@@ -47,7 +46,6 @@ fun LeftStatsScreen(
         AppleStyleCalendar(
             selectedDate = selectedCalendarDate,
             // ✅ 传入数据
-            statusMap = calendarStatusMap,
             onDateSelected = { date ->
                 selectedCalendarDate = date
                 showSelectionDialog = true

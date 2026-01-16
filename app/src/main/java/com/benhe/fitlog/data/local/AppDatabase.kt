@@ -38,7 +38,7 @@ import com.benhe.fitlog.model.DailyActivity
         BodyStatRecord::class  // 身体成分记录表
     ],
     // 数据库版本号。当实体类的结构发生变化时，需要增加版本号并提供迁移策略。
-    version = 12,
+    version = 13,
     // 是否将数据库的 schema 导出到文件中，用于版本控制和检查。设置为 false 表示不导出。
     exportSchema = false
 )

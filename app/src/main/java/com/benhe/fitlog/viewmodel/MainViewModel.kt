@@ -31,7 +31,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import com.benhe.fitlog.ui.components.DayHealthStatus
+
 
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -67,19 +67,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val KEY_CUSTOM_FOODS = "custom_foods_list"
 
     private val _customFoodItems = MutableStateFlow<List<FoodItem>>(emptyList())
-
-    val calendarStatusMap: StateFlow<Map<String, DayHealthStatus>> = activityDao.getAllActivities() // 假设你的 DAO 有 getAllActivities 返回 Flow<List<DailyActivity>>
-        .map { list ->
-            list.associate { activity ->
-                // key 是日期字符串 "2026-01-13"
-                activity.date to DayHealthStatus(
-                    isDietGoalMet = activity.totalCalories > 0,   // 有摄入热量，饮食圈变绿
-                    isWorkoutGoalMet = activity.workoutDuration > 0, // 有运动时长，运动圈变蓝
-                    isSleepGoalMet = activity.sleepHours > 0f     // 有睡眠记录，睡眠圈变紫
-                )
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
 
     // 3. 【核心】对外暴露的完整分类列表 (合并了默认 + 自定义)
@@ -263,7 +250,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // 调用 Dao 里的范围查询
         return workoutDao.getSetsByTimeRange(start, end)
     }
-    // 在 MainViewModel.kt 中更新
+
+
+
     fun saveWorkoutSet(date: String, region: BodyRegion, weight: Float, reps: Int, rpe: Int, note: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = java.time.LocalDate.parse(date)
