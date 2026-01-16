@@ -31,7 +31,7 @@ import com.benhe.fitlog.ui.ProfileScreen
 import com.benhe.fitlog.ui.RightProfileScreen
 import com.benhe.fitlog.ui.components.DailyDietListScreen
 import com.benhe.fitlog.ui.screens.HomeScreen
-import com.benhe.fitlog.ui.screens.WorkoutSessionScreen
+import com.benhe.fitlog.ui.WorkoutSessionScreen
 import com.benhe.fitlog.ui.theme.FitlogTheme
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate

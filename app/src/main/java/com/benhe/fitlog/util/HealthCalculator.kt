@@ -44,15 +44,6 @@ object HealthCalculator {
         return finalExpenditure.toInt()
     }
 
-    /**
-     * 3. 计算综合恢复系数 (用于简易展示或作为 LoadCalculator 的参考)
-     * 逻辑：睡眠时长权重 + 生活强度恢复权重 (久坐恢复快)
-     */
-    fun calculateRecoveryFactor(sleepHours: Float, intensity: LifeIntensity): Float {
-        val sleepFactor = (sleepHours / 8f).coerceIn(0.6f, 1.2f)
-        // 直接使用枚举中的 recoveryImpact (久坐 1.3, 强力 0.9)
-        return (sleepFactor * intensity.recoveryImpact).coerceIn(0.5f, 1.5f)
-    }
 
     /**
      * 4. 计算蛋白质目标 (克)
