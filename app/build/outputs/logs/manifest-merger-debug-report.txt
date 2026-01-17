@@ -33,6 +33,7 @@ MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] C:\Users\b
 MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\8b0a31cc16ed72efeb9d4922a8848ab5\transformed\lifecycle-viewmodel-ktx-2.7.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\34ee772cff37741d69ad95c10baf5ca3\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\5a25853e5cb6b9a75ed8efe044718aff\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\a157aed7f7e08643264d3013bb0f84d4\transformed\lifecycle-runtime-compose-2.7.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\10b12baa29c3eb3705a33ffbf986592e\transformed\lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\1619c0563d708a31700b9a83c6349fa6\transformed\lifecycle-viewmodel-compose-2.7.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.compose.ui:ui-android:1.6.3] C:\Users\benhe\.gradle\caches\8.13\transforms\ea5b7ebec1511740e711156ec1028830\transformed\ui-release\AndroidManifest.xml:2:1-7:12
@@ -184,6 +185,8 @@ MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\benhe\.gradl
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\34ee772cff37741d69ad95c10baf5ca3\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\5a25853e5cb6b9a75ed8efe044718aff\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:5:5-44
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\5a25853e5cb6b9a75ed8efe044718aff\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\a157aed7f7e08643264d3013bb0f84d4\transformed\lifecycle-runtime-compose-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-compose:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\a157aed7f7e08643264d3013bb0f84d4\transformed\lifecycle-runtime-compose-2.7.0\AndroidManifest.xml:5:5-44
 MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\10b12baa29c3eb3705a33ffbf986592e\transformed\lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\10b12baa29c3eb3705a33ffbf986592e\transformed\lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0] C:\Users\benhe\.gradle\caches\8.13\transforms\1619c0563d708a31700b9a83c6349fa6\transformed\lifecycle-viewmodel-compose-2.7.0\AndroidManifest.xml:5:5-44

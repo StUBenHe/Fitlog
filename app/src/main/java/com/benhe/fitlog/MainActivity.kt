@@ -26,7 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.benhe.fitlog.ui.DietScreen
-import com.benhe.fitlog.ui.LeftStatsScreen
+import com.benhe.fitlog.ui.History
 import com.benhe.fitlog.ui.ProfileScreen
 import com.benhe.fitlog.ui.RightProfileScreen
 import com.benhe.fitlog.ui.components.DailyDietListScreen
@@ -154,7 +154,7 @@ fun MainContainerScreen(viewModel: MainViewModel) {
 // 在 NavHost 中，找到 BottomNavItem.History.route 的部分
 
             composable(BottomNavItem.History.route) {
-                LeftStatsScreen(
+                History(
                     viewModel = viewModel,
                     onNavigateToDiet = { date -> navController.navigate(Routes.dietList(date)) },
                     onNavigateToWorkout = { date -> navController.navigate(Routes.workoutSession(date)) }

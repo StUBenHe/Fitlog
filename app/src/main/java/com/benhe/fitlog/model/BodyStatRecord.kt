@@ -12,11 +12,3 @@ data class BodyStatRecord(
     val dateString: String // yyyy-MM-dd 用于显示
 )
 
-// 用于 UI 层传递给凯尔特结的数据模型
-data class DailyHealthStatus(
-    val calorieIntake: Int,       // 摄入卡路里
-    val calorieBurnTarget: Int,   // 目标/消耗卡路里 (TDEE + 运动)
-    val workoutFatigue: Int,      // 训练恢复状态值 (0-1000)
-    val sleepHours: Float,        // 睡眠时间
-    val isHighTrainingLoad: Boolean // 是否大训练量日
-)

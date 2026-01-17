@@ -15,6 +15,8 @@ import com.benhe.fitlog.data.local.entiy.WorkoutSession
 import com.benhe.fitlog.data.local.entiy.WorkoutSet
 import com.benhe.fitlog.model.BodyStatRecord
 import com.benhe.fitlog.model.DailyActivity
+import com.benhe.fitlog.data.local.dao.PeriodDao
+import com.benhe.fitlog.model.PeriodDay
 
 /**
  * 应用的核心 Room 数据库定义类。
@@ -35,10 +37,11 @@ import com.benhe.fitlog.model.DailyActivity
         ExerciseCatalog::class,// 动作库表
         WorkoutSession::class, // 训练会话表
         WorkoutSet::class,     // 训练组详情表
-        BodyStatRecord::class  // 身体成分记录表
+        BodyStatRecord::class,  // 身体成分记录表
+        PeriodDay::class
     ],
     // 数据库版本号。当实体类的结构发生变化时，需要增加版本号并提供迁移策略。
-    version = 13,
+    version = 14,
     // 是否将数据库的 schema 导出到文件中，用于版本控制和检查。设置为 false 表示不导出。
     exportSchema = false
 )
@@ -52,6 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun dailyActivityDao(): DailyActivityDao
     abstract fun workoutDao(): WorkoutDao
 
+    abstract fun periodDao(): PeriodDao // 新增
     companion object {
         // 使用 @Volatile 确保 INSTANCE 变量在多线程环境下的可见性，防止出现指令重排导致的问题。
         @Volatile

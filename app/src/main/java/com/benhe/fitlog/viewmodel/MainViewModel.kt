@@ -23,21 +23,25 @@ import com.benhe.fitlog.util.LoadCalculator
 import kotlinx.coroutines.flow.*
 import java.time.LocalDate
 import java.time.ZoneId
-import com.benhe.fitlog.model.FoodCategory // 确保引入
-import com.benhe.fitlog.model.FoodItem     // 确保引入
-import com.benhe.fitlog.data.FoodCatalog   // 确保引入
+import com.benhe.fitlog.model.FoodCategory
+import com.benhe.fitlog.model.FoodItem
+import com.benhe.fitlog.data.FoodCatalog
 import com.benhe.fitlog.model.BodyStatRecord
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.flow.firstOrNull // 必须导入这个扩展函数
+import kotlinx.coroutines.flow.firstOrNull
 import com.benhe.fitlog.data.local.entiy.WorkoutSession
+// ✅ 【修复核心 1/3】新增：引入经期相关的 Model 和 DAO
+import com.benhe.fitlog.model.PeriodDay
+import com.benhe.fitlog.data.local.dao.PeriodDao
+import java.time.temporal.ChronoUnit
 
 /**
  * 应用的核心 ViewModel。
  * 负责管理主界面的 UI 状态，处理用户交互，并作为 UI 层与数据层（数据库、SharedPreferences）之间的桥梁。
- * 包含饮食记录、训练记录同步、身体状态计算和身体指标管理等核心逻辑。
+ * 包含饮食记录、训练记录同步、身体状态计算、身体指标管理和经期追踪等核心逻辑。
  */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -51,6 +55,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val workoutDao = db.workoutDao()
     /** 身体成分（体重/体脂） DAO */
     private val bodyStatDao = db.bodyStatDao()
+    // ✅ 【修复核心 2/3】新增：初始化经期记录 DAO
+    private val periodDao: PeriodDao = db.periodDao()
 
     // (注意：以下两个变量与上面的 bodyStatDao 和 dailyActivityDao 指向相同实例，建议在后续重构中合并使用上面的变量)
     private val dao = AppDatabase.getDatabase(application).bodyStatDao()
@@ -75,6 +81,83 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     val bodyStatHistory: StateFlow<List<BodyStatRecord>> = dao.getHistoryStats()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+
+    // ✅ 【修复核心 3/3】新增：经期追踪核心逻辑开始 ====================
+
+    /**
+     * 获取所有已记录的历史经期日期集合。
+     * 将 DAO 返回的 List 转换为 Set，以便 UI 层可以高效地检查某天是否是经期。
+     *
+     * 作用：用于在日历上用深色标记已发生的经期。
+     */
+    val pastPeriodDates: StateFlow<Set<LocalDate>> = periodDao.getAllPeriodDays()
+        .map { list -> list.map { it.date }.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    /**
+     * 获取预测的未来经期日期集合。
+     * 监听历史数据的变化，每当历史数据更新时，重新调用 `calculatePrediction` 进行预测。
+     *
+     * 作用：用于在日历上用浅色标记预测的经期。
+     */
+    val predictedPeriodDates: StateFlow<Set<LocalDate>> = periodDao.getAllPeriodDays()
+        .map { historyList -> calculatePrediction(historyList) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    /**
+     * 核心预测算法。
+     * 基于最近的历史记录，推算下一次经期的可能日期范围。
+     *
+     * 算法逻辑（基础版）：
+     * 1. 获取最近一次记录的日期（DAO 已按降序排列，取第一个即可）。
+     * 2. 假设周期长度为 28 天，经期持续 5 天。
+     * 3. 计算下次开始日期 = 最近记录日期 + 28天。
+     * 4. 生成从下次开始日期起连续 5 天的日期集合。
+     *
+     * @param history 按时间倒序排列的历史经期记录列表
+     * @return 预测日期的集合
+     */
+    private fun calculatePrediction(history: List<PeriodDay>): Set<LocalDate> {
+        if (history.isEmpty()) return emptySet()
+
+        // 1. 找到最近一个周期的开始日期
+        // 简单起见，我们假设最近记录的那一天就是最近周期的第一天。
+        val lastCycleStartDate = history.first().date
+
+        // 2. 定义默认参数
+        val defaultCycleLength = 28L // 默认周期长度
+        val defaultDuration = 5L     // 默认经期持续天数
+
+        // 3. 计算下一次开始的日期
+        val nextCycleStart = lastCycleStartDate.plusDays(defaultCycleLength)
+
+        // 4. 生成预测日期集合
+        val predictedSet = mutableSetOf<LocalDate>()
+        for (i in 0 until defaultDuration) {
+            predictedSet.add(nextCycleStart.plusDays(i))
+        }
+        return predictedSet
+    }
+
+    /**
+     * 切换指定日期的经期状态。
+     * 如果该日期已标记为经期，则取消标记（删除）；反之则进行标记（插入）。
+     * 供 UI 层（例如日历弹窗中的按钮）调用。
+     *
+     * @param date 要操作的日期
+     */
+    fun togglePeriodStatus(date: LocalDate) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val isMarked = periodDao.isPeriodDay(date)
+            if (isMarked) {
+                periodDao.delete(PeriodDay(date))
+            } else {
+                periodDao.insert(PeriodDay(date))
+            }
+        }
+    }
+    // ✅ 经期追踪核心逻辑结束 ====================
 
 
     // ==================== 内部变量与常量 ====================

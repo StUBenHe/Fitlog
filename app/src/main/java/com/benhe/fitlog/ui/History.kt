@@ -9,6 +9,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+// ✅ 【非常重要】确保包含以下两个导入，它们解决了 "Property delegate must have a getValue" 和 "Cannot infer type" 的错误
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -16,35 +19,49 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.benhe.fitlog.model.LifeIntensity
-// ✅ 导入需要的组件和工具类
 import com.benhe.fitlog.ui.components.ActivityInputDialog
 import com.benhe.fitlog.ui.components.AppleStyleCalendar
 import com.benhe.fitlog.ui.components.StatsLineChart
-
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
+// 假设您在主题文件中定义了深红色，如果没有，可以使用 Color(0xFFE91E63)
+val PeriodRedColor = Color(0xFFE91E63)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun LeftStatsScreen(
+fun History( // 假设您可能把 LeftStatsScreen 改名成了 HistoryScreen，如果没改请用回原来的名字
     viewModel: MainViewModel,
     onNavigateToDiet: (String) -> Unit,
-    onNavigateToWorkout: (String) -> Unit,
-    // 注意：这里不再需要 onNavigateToStatus 回调了，因为我们在内部处理
+    onNavigateToWorkout: (String) -> Unit
 ) {
+    // 监听体重/体脂历史数据
     val historyData by viewModel.bodyStatHistory.collectAsState()
+
+    // ✅ 【修复核心】监听 ViewModel 中的经期数据流
+    // 如果这里报错，请确保您完成了“第一步：重建项目”
+    val pastPeriodDates by viewModel.pastPeriodDates.collectAsState(initial = emptySet())
+    val predictedPeriodDates by viewModel.predictedPeriodDates.collectAsState(initial = emptySet())
+
+    // UI 状态
     var selectedCalendarDate by remember { mutableStateOf(LocalDate.now()) }
     var showWeight by remember { mutableStateOf(true) }
-
-    // 控制第一个弹窗（三按钮菜单）显示的状态
     var showSelectionDialog by remember { mutableStateOf(false) }
-
-    // ✅ 新增：控制第二个弹窗（记录状态）显示的状态
     var showActivityDialog by remember { mutableStateOf(false) }
 
-    // ✅ 获取后燃效应自动开启状态
+    // 获取后燃效应自动开启状态
     val isAfterburnAuto by viewModel.isAfterburnAutoActive.collectAsState()
+
+    // ✅ 新增状态：判断当前选中的日期是否已经被标记为经期（用于更新按钮文字）
+    var isCurrentDateMarkedAsPeriod by remember { mutableStateOf(false) }
+
+    // 监听选中日期的变化或历史数据的变化，实时更新按钮状态
+    LaunchedEffect(selectedCalendarDate, pastPeriodDates) {
+        isCurrentDateMarkedAsPeriod = pastPeriodDates.contains(selectedCalendarDate)
+    }
 
     Column(
         modifier = Modifier
@@ -53,9 +70,12 @@ fun LeftStatsScreen(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // ... (AppleStyleCalendar 和 StatsLineChart 部分保持不变) ...
+        // --- 1. 日历组件 ---
         AppleStyleCalendar(
             selectedDate = selectedCalendarDate,
+            // ✅ 将数据传递给日历组件进行渲染
+            pastPeriodDates = pastPeriodDates,
+            predictedPeriodDates = predictedPeriodDates,
             onDateSelected = { date ->
                 selectedCalendarDate = date
                 showSelectionDialog = true
@@ -104,7 +124,7 @@ fun LeftStatsScreen(
         Spacer(Modifier.height(80.dp))
     }
 
-    // --- 第一个弹窗：三按钮菜单 ---
+    // --- 第一个弹窗：操作选择菜单 ---
     if (showSelectionDialog) {
         val dateStr = selectedCalendarDate.toString() // yyyy-MM-dd
         val titleDate = selectedCalendarDate.format(DateTimeFormatter.ofPattern("MM月dd日"))
@@ -116,15 +136,37 @@ fun LeftStatsScreen(
                 Column {
                     Text("请选择要查看或记录的内容：")
                     Spacer(modifier = Modifier.height(16.dp))
-                    // ... 按钮1：饮食记录 (保持不变) ...
+
+                    // ✅ 【核心功能】新增：经期标记按钮
+                    Button(
+                        onClick = {
+                            // ✅ 调用 ViewModel 的方法切换状态。如果报错，请确保重建了项目。
+                            viewModel.togglePeriodStatus(selectedCalendarDate)
+                            // 可选：点击后关闭弹窗，或者保留以便进行其他操作
+                            showSelectionDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        // 根据当前状态改变按钮颜色：已标记显示灰色(取消)，未标记显示红色(标记)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isCurrentDateMarkedAsPeriod) Color.Gray else PeriodRedColor
+                        )
+                    ) {
+                        Text(if (isCurrentDateMarkedAsPeriod) "取消经期标记" else "标记为经期日")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Divider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 按钮：饮食记录
                     Button(onClick = { showSelectionDialog = false; onNavigateToDiet(dateStr) }, modifier = Modifier.fillMaxWidth()) { Text("饮食记录") }
                     Spacer(modifier = Modifier.height(8.dp))
-                    // ... 按钮2：运动记录 (保持不变) ...
+                    // 按钮：运动记录
                     Button(onClick = { showSelectionDialog = false; onNavigateToWorkout(dateStr) }, modifier = Modifier.fillMaxWidth()) { Text("运动记录") }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // ✅ 按钮 3：修改点击事件
+                    // 按钮：记录状态
                     Button(
                         onClick = {
                             showSelectionDialog = false // 关闭第一个弹窗
@@ -141,15 +183,14 @@ fun LeftStatsScreen(
         )
     }
 
-    // ✅ --- 第二个弹窗：使用 ActivityInputDialog ---
+    // --- 第二个弹窗：状态录入 (保持不变) ---
     if (showActivityDialog) {
         val dateStr = selectedCalendarDate.toString()
         // 获取所选日期的活动数据，如果没有则为 null
         val activityData = viewModel.getActivityForDate(dateStr).collectAsState(initial = null).value
 
-        // ✅ 调用您现有的 ActivityInputDialog 组件
         ActivityInputDialog(
-            // 如果有历史数据就使用，没有就用默认值 (例如 8小时睡眠，正常强度)
+            // 如果有历史数据就使用，没有就用默认值
             initialSleep = activityData?.sleepHours ?: 8f,
             initialIntensity = activityData?.intensity ?: LifeIntensity.NORMAL,
             isAfterburnAutoActive = isAfterburnAuto,

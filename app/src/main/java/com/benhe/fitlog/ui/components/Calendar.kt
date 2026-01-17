@@ -26,13 +26,19 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
+
 // ✅ 已删除 data class DayHealthStatus
+val PeriodRed = Color(0xFFE91E63) // 深红色，表示已发生
+val PeriodPink = Color(0xFFF48FB1) // 粉红色，表示预测
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppleStyleCalendar(
-    // ✅ 已删除 statusMap 参数
     selectedDate: LocalDate,
+    // ✅ 新增参数：已发生的经期日期集合
+    pastPeriodDates: Set<LocalDate> = emptySet(),
+    // ✅ 新增参数：预测的经期日期集合
+    predictedPeriodDates: Set<LocalDate> = emptySet(),
     onDateSelected: (LocalDate) -> Unit
 ) {
     // 状态：当前展示的月份
@@ -92,14 +98,18 @@ fun AppleStyleCalendar(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+
             items(days) { date ->
                 if (date != null) {
                     // ✅ 已删除获取 status 的逻辑
-
+                    val isPastPeriod = pastPeriodDates.contains(date)
+                    val isPredictedPeriod = predictedPeriodDates.contains(date)
                     DayCell(
                         date = date,
                         isSelected = date == selectedDate,
-                        // ✅ 已删除 status 参数传递
+                        // ✅ 传递状态给 DayCell
+                        isPastPeriod = isPastPeriod,
+                        isPredictedPeriod = isPredictedPeriod,
                         onClick = { onDateSelected(date) }
                     )
                 } else {
@@ -144,30 +154,44 @@ fun DayCell(
     date: LocalDate,
     isSelected: Boolean,
     // ✅ 已删除 status: DayHealthStatus 参数
+    isPastPeriod: Boolean,
+    isPredictedPeriod: Boolean,
     onClick: () -> Unit
 ) {
     val isToday = date == LocalDate.now()
+    val bgColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        isPastPeriod -> PeriodRed.copy(alpha = 0.8f) // 已发生：深红
+        isPredictedPeriod -> PeriodPink.copy(alpha = 0.6f) // 预测：浅粉
+        else -> Color.Transparent
+    }
+    val textColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        isPastPeriod || isPredictedPeriod -> Color.White // 如果是经期背景，文字变白
+        isToday -> MaterialTheme.colorScheme.primary
+        else -> Color.Black
+    }
 
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(CircleShape)
-            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
+            // ✅ 使用计算出的背景色
+            .background(bgColor)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        // ✅ 已删除 TinyCelticKnotStamp 的调用
-
         // 1. 日期数字
         Text(
             text = date.dayOfMonth.toString(),
             fontSize = 14.sp,
-            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Black
+            // ✅ 使用计算出的文字颜色和粗细
+            fontWeight = if (isSelected || isToday || isPastPeriod) FontWeight.Bold else FontWeight.Normal,
+            color = textColor
         )
 
-        // 2. 今天的小圆点标记
-        if (isToday) {
+        // 2. 今天的小圆点标记 (如果今天是经期，可能需要隐藏这个点，或者改变颜色，这里暂且保留)
+        if (isToday && !isPastPeriod && !isPredictedPeriod) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

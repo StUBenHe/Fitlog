@@ -34,7 +34,7 @@ android {
 }
 
 dependencies {
-
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.x") // 版本号可能是 2.6.1, 2.6.2 或更高
     implementation("androidx.navigation:navigation-compose:2.7.7")
     val nav_version = "2.7.7" // 或最新版本
     implementation("androidx.navigation:navigation-compose:$nav_version")

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.benhe.fitlog.app-mergeDebugResources-49:/values-sk/values-sk.xml",
+            "outputFile": "com.benhe.fitlog.app-mergeDebugResources-50:/values-sk/values-sk.xml",
             "map": [
                 {
                     "source": "C:\\Users\\benhe\\.gradle\\caches\\8.13\\transforms\\b6b27c71267ce4ad07b62a362be81783\\transformed\\material3-1.1.1\\res\\values-sk\\values-sk.xml",

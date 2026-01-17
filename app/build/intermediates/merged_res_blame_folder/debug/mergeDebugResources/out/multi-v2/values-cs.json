@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.benhe.fitlog.app-mergeDebugResources-49:/values-cs/values-cs.xml",
+            "outputFile": "com.benhe.fitlog.app-mergeDebugResources-50:/values-cs/values-cs.xml",
             "map": [
                 {
                     "source": "C:\\Users\\benhe\\.gradle\\caches\\8.13\\transforms\\ea5b7ebec1511740e711156ec1028830\\transformed\\ui-release\\res\\values-cs\\values-cs.xml",
