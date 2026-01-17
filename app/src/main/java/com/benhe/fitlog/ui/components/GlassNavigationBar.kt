@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-// ✅ 确保导入了这个包
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -22,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
+// 确保这个包名和你的项目一致
 import com.benhe.fitlog.BottomNavItem
 import com.benhe.fitlog.ui.theme.*
 
@@ -78,7 +78,6 @@ fun GlassNavItem(
 ) {
     val iconColor = if (isSelected) Brand500 else TextSlate400
     val labelColor = if (isSelected) TextSlate800 else TextSlate400
-    // 将变量名从 scale 改为 scaleFactor，避免混淆
     val scaleFactor = if (isSelected) 1.1f else 1.0f
 
     Column(
@@ -86,7 +85,6 @@ fun GlassNavItem(
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(8.dp)
-            // ✅ 修复：明确调用 Modifier.scale(scaleFactor)
             .scale(scaleFactor),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

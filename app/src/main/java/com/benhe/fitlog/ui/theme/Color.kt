@@ -46,3 +46,10 @@ val BackgroundGradient = Brush.linearGradient(
         Color(0xFFE0F2FE)
     )
 )
+
+// 在 imports 下方添加新的顏色定義
+// 新设计主题色：青绿色 (Teal/Cyan)
+val Teal500 = Color(0xFF14B8A6) // 主色調
+val Teal50 = Color(0xFFF0FDFA)  // 淺色背景
+val Cyan500 = Color(0xFF06B6D4) // 另一個主色調，用於漸變
+val Sky500 = Color(0xFF0EA5E9)  // 藍色，用於等級標籤

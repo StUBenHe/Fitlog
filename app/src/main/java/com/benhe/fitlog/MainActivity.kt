@@ -19,8 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
+
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -38,44 +37,14 @@ import java.time.LocalDate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-// ...
 import com.benhe.fitlog.ui.theme.BackgroundGradient // 导入刚才定义的渐变
-import com.benhe.fitlog.ui.theme.FitlogTheme
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.scale
-import com.benhe.fitlog.ui.components.GlassNavigationBar // 导入新组件
+
 import com.benhe.fitlog.ui.theme.*
-
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.runtime.*
-
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.benhe.fitlog.ui.DietScreen
-import com.benhe.fitlog.ui.History
-import com.benhe.fitlog.ui.ProfileScreen
-import com.benhe.fitlog.ui.RightProfileScreen
-import com.benhe.fitlog.ui.components.DailyDietListScreen
-// ✅ 导入新组件和主题色
+// ✅ 核心修復：確保導入了 GlassNavigationBar
 import com.benhe.fitlog.ui.components.GlassNavigationBar
-import com.benhe.fitlog.ui.screens.HomeScreen
-import com.benhe.fitlog.ui.WorkoutSessionScreen
-import com.benhe.fitlog.ui.theme.BackgroundGradient
-import com.benhe.fitlog.ui.theme.FitlogTheme
+
 
 
 class MainActivity : ComponentActivity() {

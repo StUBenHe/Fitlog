@@ -1,5 +1,8 @@
 package com.benhe.fitlog.viewmodel
 
+
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
@@ -33,106 +36,80 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.firstOrNull
 import com.benhe.fitlog.data.local.entiy.WorkoutSession
-// ✅ 【修复核心 1/3】新增：引入经期相关的 Model 和 DAO
 import com.benhe.fitlog.model.PeriodDay
 import com.benhe.fitlog.data.local.dao.PeriodDao
-import java.time.temporal.ChronoUnit
+// 删除：不再需要引入 WorkoutItemDraft
+// import com.benhe.fitlog.ui.WorkoutItemDraft
+import com.benhe.fitlog.ui.theme.*
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+
 
 /**
  * 应用的核心 ViewModel。
- * 负责管理主界面的 UI 状态，处理用户交互，并作为 UI 层与数据层（数据库、SharedPreferences）之间的桥梁。
- * 包含饮食记录、训练记录同步、身体状态计算、身体指标管理和经期追踪等核心逻辑。
+ * 负责管理主界面的 UI 状态，处理用户交互，并作为 UI 层与数据层之间的桥梁。
  */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // ==================== 数据源初始化 ====================
     private val db = AppDatabase.getDatabase(application)
-    /** 饮食记录 DAO */
     private val dietDao = db.dietDao()
-    /** 每日活动/睡眠/强度 DAO */
     private val dailyActivityDao = db.dailyActivityDao()
-    /** 训练记录 DAO */
     private val workoutDao = db.workoutDao()
-    /** 身体成分（体重/体脂） DAO */
     private val bodyStatDao = db.bodyStatDao()
-    // ✅ 【修复核心 2/3】新增：初始化经期记录 DAO
     private val periodDao: PeriodDao = db.periodDao()
 
-    // (注意：以下两个变量与上面的 bodyStatDao 和 dailyActivityDao 指向相同实例，建议在后续重构中合并使用上面的变量)
+    // (注意：以下两个变量与上面的 bodyStatDao 和 dailyActivityDao 指向相同实例，建议合并)
     private val dao = AppDatabase.getDatabase(application).bodyStatDao()
     private val activityDao = AppDatabase.getDatabase(application).dailyActivityDao()
 
     private val workoutRepository = com.benhe.fitlog.data.repository.WorkoutRepository(workoutDao)
 
+    // ==================== UI 状态管理 (解决页面切换数据丢失问题) ====================
+
+    /** 保存身体部位的编辑状态 (Key: 部位, Value: Pair<等级, 备注>) */
+    val regionDraftState = mutableStateMapOf<BodyRegion, Pair<Int, String>>()
+
+    // 删除：保存自定义项目的编辑列表状态
+    // val customItemsDraftState = mutableStateListOf<WorkoutItemDraft>()
+
+    /** 清空所有训练记录草稿 */
+    fun clearWorkoutDrafts() {
+        regionDraftState.clear()
+        // 删除：清空自定义项目草稿
+        // customItemsDraftState.clear()
+    }
+
+
     // ==================== UI 状态流 (StateFlow) ====================
 
-    /**
-     * 1. 实时监听最新的身体指标数据。
-     * 用于 UI 侧边栏显示当前的体重和体脂率。
-     * 如果没有数据，初始值为 null。
-     */
+    /** 实时监听最新的身体指标数据 (侧边栏使用) */
     val latestBodyStat: StateFlow<BodyStatRecord?> = dao.getLatestStat()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    /**
-     * 2. 实时监听身体指标历史列表。
-     * 用于 UI 左侧的折线图展示历史趋势。
-     * 如果没有数据，初始值为空列表。
-     */
+    /** 实时监听身体指标历史列表 (左侧折线图使用) */
     val bodyStatHistory: StateFlow<List<BodyStatRecord>> = dao.getHistoryStats()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // ==================== 经期追踪逻辑 ====================
 
-    // ✅ 【修复核心 3/3】新增：经期追踪核心逻辑开始 ====================
-
-    /**
-     * 获取所有已记录的历史经期日期集合。
-     * 将 DAO 返回的 List 转换为 Set，以便 UI 层可以高效地检查某天是否是经期。
-     *
-     * 作用：用于在日历上用深色标记已发生的经期。
-     */
+    /** 获取所有历史经期日期集合 (深色标记) */
     val pastPeriodDates: StateFlow<Set<LocalDate>> = periodDao.getAllPeriodDays()
         .map { list -> list.map { it.date }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
-    /**
-     * 获取预测的未来经期日期集合。
-     * 监听历史数据的变化，每当历史数据更新时，重新调用 `calculatePrediction` 进行预测。
-     *
-     * 作用：用于在日历上用浅色标记预测的经期。
-     */
+    /** 获取预测的未来经期日期集合 (浅色标记) */
     val predictedPeriodDates: StateFlow<Set<LocalDate>> = periodDao.getAllPeriodDays()
         .map { historyList -> calculatePrediction(historyList) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
-    /**
-     * 核心预测算法。
-     * 基于最近的历史记录，推算下一次经期的可能日期范围。
-     *
-     * 算法逻辑（基础版）：
-     * 1. 获取最近一次记录的日期（DAO 已按降序排列，取第一个即可）。
-     * 2. 假设周期长度为 28 天，经期持续 5 天。
-     * 3. 计算下次开始日期 = 最近记录日期 + 28天。
-     * 4. 生成从下次开始日期起连续 5 天的日期集合。
-     *
-     * @param history 按时间倒序排列的历史经期记录列表
-     * @return 预测日期的集合
-     */
+    /** 经期预测算法 (基础版: 周期28天, 持续5天) */
     private fun calculatePrediction(history: List<PeriodDay>): Set<LocalDate> {
         if (history.isEmpty()) return emptySet()
-
-        // 1. 找到最近一个周期的开始日期
-        // 简单起见，我们假设最近记录的那一天就是最近周期的第一天。
         val lastCycleStartDate = history.first().date
-
-        // 2. 定义默认参数
-        val defaultCycleLength = 28L // 默认周期长度
-        val defaultDuration = 5L     // 默认经期持续天数
-
-        // 3. 计算下一次开始的日期
+        val defaultCycleLength = 28L
+        val defaultDuration = 5L
         val nextCycleStart = lastCycleStartDate.plusDays(defaultCycleLength)
-
-        // 4. 生成预测日期集合
         val predictedSet = mutableSetOf<LocalDate>()
         for (i in 0 until defaultDuration) {
             predictedSet.add(nextCycleStart.plusDays(i))
@@ -140,13 +117,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return predictedSet
     }
 
-    /**
-     * 切换指定日期的经期状态。
-     * 如果该日期已标记为经期，则取消标记（删除）；反之则进行标记（插入）。
-     * 供 UI 层（例如日历弹窗中的按钮）调用。
-     *
-     * @param date 要操作的日期
-     */
+    /** 切换指定日期的经期状态 */
     fun togglePeriodStatus(date: LocalDate) {
         viewModelScope.launch(Dispatchers.IO) {
             val isMarked = periodDao.isPeriodDay(date)
@@ -157,60 +128,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-    // ✅ 经期追踪核心逻辑结束 ====================
 
-
-    // ==================== 内部变量与常量 ====================
-
+    // ==================== 内部变量与自定义食物逻辑 ====================
 
     private val gson = Gson()
-    private val PREFS_NAME = "user_prefs" // 用于存储用户偏好和自定义食物的 SharedPreferences 名称
-    private val KEY_CUSTOM_FOODS = "custom_foods_list" // 自定义食物列表在 SharedPreferences 中的 Key
-
-    /** 内部持有的自定义食物列表状态流 */
+    private val PREFS_NAME = "user_prefs"
+    private val KEY_CUSTOM_FOODS = "custom_foods_list"
     private val _customFoodItems = MutableStateFlow<List<FoodItem>>(emptyList())
 
-    // ==================== 自定义食物逻辑 ====================
-
-    /**
-     * 3. 【核心 UI 数据源】对外暴露的完整食物分类列表流。
-     *
-     * 它的作用是将硬编码的默认食物库 (`FoodCatalog.categories`) 与用户添加的自定义食物 (`_customFoodItems`) 进行合并。
-     * 合并后的列表可以直接供 UI 的 ExpandableListView 使用。
-     */
+    /** 完整食物分类列表 (默认+自定义) */
     val allFoodCategories: StateFlow<List<FoodCategory>> = _customFoodItems.map { customItems ->
-        val defaultList = FoodCatalog.categories.toMutableList() // 获取默认列表的拷贝
-
+        val defaultList = FoodCatalog.categories.toMutableList()
         if (customItems.isNotEmpty()) {
-            // 创建一个专门存放自定义食物的新分类
             val customCategory = FoodCategory(
                 id = "custom_user",
                 name = "我的常吃/自定义",
-                items = customItems.reversed() // 将最新添加的食物排在前面
+                items = customItems.reversed()
             )
-            // 将自定义分类插到整个列表的最前面，方便用户查找
             defaultList.add(0, customCategory)
         }
         defaultList
     }.stateIn(viewModelScope, SharingStarted.Lazily, FoodCatalog.categories)
 
-    /**
-     * ViewModel 初始化块。
-     * 在 ViewModel 创建时立即启动加载本地自定义食物数据的任务。
-     */
     init {
         loadCustomFoods()
     }
 
-    /**
-     * 从 SharedPreferences 中异步加载用户保存的自定义食物列表。
-     * 加载成功后更新 `_customFoodItems` 状态流。
-     */
     private fun loadCustomFoods() {
         viewModelScope.launch(Dispatchers.IO) {
             val sharedPref = getApplication<Application>().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val json = sharedPref.getString(KEY_CUSTOM_FOODS, null)
-
             if (json != null) {
                 try {
                     val type = object : TypeToken<List<FoodItem>>() {}.type
@@ -223,24 +170,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * 添加一个新的自定义食物项。
-     *
-     * 操作步骤：
-     * 1. 更新内存中的状态流 `_customFoodItems`，以便 UI 立即刷新。
-     * 2. 将更新后的列表序列化为 JSON 字符串。
-     * 3. 异步持久化保存到 SharedPreferences 中。
-     *
-     * @param item 新增的食物对象
-     */
     fun addCustomFood(item: FoodItem) {
         viewModelScope.launch(Dispatchers.IO) {
-            // 1. 更新内存
             val currentList = _customFoodItems.value.toMutableList()
             currentList.add(item)
             _customFoodItems.value = currentList
-
-            // 2. 保存到本地 (SharedPreferences)
             val sharedPref = getApplication<Application>().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val jsonString = gson.toJson(currentList)
             sharedPref.edit().putString(KEY_CUSTOM_FOODS, jsonString).apply()
@@ -252,18 +186,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * 【核心修复后的方法】同步保存某一天的所有部位训练摘要记录。
-     *
      * 采用策略：**“覆盖更新”** (Replace by Day)。
-     * 1. 确保目标日期存在一个父级 `WorkoutSession`（如果没有则创建）。
-     * 2. **删除**该日期下所有的旧 `WorkoutSet` 记录。
-     * 3. 根据传入的 `drafts` 数据，批量插入新的 `WorkoutSet` 记录，并关联到步骤1中的 Session ID。
-     *
-     * 这种策略避免了复杂的更新逻辑，确保数据库状态与 UI提交的状态完全一致。
      *
      * @param dateString 目标日期字符串 (yyyy-MM-dd)
-     * @param drafts 包含部位数据的 Map，格式为：Map<部位枚举, Pair<RPE评级(Int), 备注文本(String)>>
+     * @param drafts 包含部位数据的 Map (UI 状态 regionDraftState)
+     * // 修改：移除了 customItems 参数
      */
-    fun syncWorkoutSets(dateString: String, drafts: Map<BodyRegion, Pair<Int, String>>) {
+    // 修改：方法签名移除了 customItems: List<WorkoutItemDraft>
+    fun syncWorkoutSets(
+        dateString: String,
+        drafts: Map<BodyRegion, Pair<Int, String>>
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             // 1. 【准备工作：提前计算好所有需要的时间变量】
             val targetDate = LocalDate.parse(dateString)
@@ -286,65 +219,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // 2. 获取或创建真实存在的父 Session ID
-            // 使用 firstOrNull() 从 Flow 中获取最新的 Session 数据（挂起函数）
             var session = workoutDao.getSessionByDate(targetDate).firstOrNull()
-
             val finalSessionId: Long = if (session != null) {
-                // 场景 A: 数据库里已经有了那一天的 Session，直接获取它的 ID
                 session.sessionId
             } else {
-                // 场景 B: 还没有那一天的 Session，创建一个新的
                 val newSession = WorkoutSession(
                     date = targetDate,
-                    startTime = startOfDay // 使用当天的起始时间戳作为 Session 的时间
+                    startTime = startOfDay
                 )
-                // 插入数据库，并【务必】获取返回的新生成的自增 ID
                 workoutDao.insertSession(newSession)
             }
 
             // 3. 删除旧数据 (实现覆盖策略)
-            // 执行按天删除操作，清空当天所有旧的子记录
             workoutDao.deleteSetsByDay(startOfDay, endOfDay)
 
-            // 4. 构建并插入新的子记录列表
+            // 4. 构建并插入新的子记录列表 (身体部位部分)
             drafts.forEach { (region, data) ->
-                // 只处理有有效数据（评级大于0 或 备注不为空）的记录，避免存入垃圾数据
                 if (data.first > 0 || data.second.isNotBlank()) {
                     val newSet = WorkoutSet(
-                        sessionId = finalSessionId, // 【关键】：填入步骤2获取的真实父 ID，解决外键约束问题
+                        sessionId = finalSessionId,
                         region = region,
-                        rpe = data.first, // 这里存的是 1-5 星评级
-                        note = data.second, // 这里存的是手动输入的备注
+                        rpe = data.first,
+                        note = data.second,
                         timestamp = timestampForSet,
-                        // 以下为兼容字段，当前汇总模式给予默认值 0
                         weight = 0f,
                         reps = 0,
-                        exerciseId = "manual"
+                        exerciseId = "manual_region" // ✅ 标识为身体部位记录
                     )
-                    // 执行插入操作
                     workoutDao.insertSet(newSet)
                 }
             }
+
+            // 删除：移除了原有的 "5. 构建并插入新的子记录列表 (自定义项目部分)" 整个代码块
         }
     }
 
-
     // ==================== 身体负荷与恢复状态计算 ====================
 
-    // 获取用于计算的基础数据流（默认使用今天日期）
     private val selectedDateString = LocalDate.now().toString()
 
-    /**
-     * 【核心功能】身体各部位恢复状态流。
-     *
-     * 这是一个组合流 (Combined Flow)，它实时监听以下三个数据源的变化：
-     * 1. 最近的训练记录 (`workoutRepository.getRecentSetsFlow()`)
-     * 2. 当天的睡眠和强度设置 (`dailyActivityDao`)
-     * 3. 当天的蛋白质摄入总量 (`dietDao`)
-     *
-     * 每当这三者任意一个发生变化时，它会调用 `LoadCalculator.calculateRegionStatus` 重新计算所有部位当前的恢复系数 (0.0 - 1.0)。
-     * 初始值为所有部位满状态 (1.0f)。
-     */
+    /** 身体各部位恢复状态流 (0.0 - 1.0) */
     val bodyStatus: StateFlow<Map<BodyRegion, Float>> = combine(
         workoutRepository.getRecentSetsFlow(),
         dailyActivityDao.getActivityByDate(selectedDateString),
@@ -352,22 +266,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) { sets, activity, protein ->
         LoadCalculator.calculateRegionStatus(
             sets = sets,
-            userProfile = getUserProfile(), // 实时获取用户基础信息
-            sleepHours = activity?.sleepHours ?: 8f, // 默认睡8小时
-            intensity = activity?.intensity ?: LifeIntensity.NORMAL, // 默认中等生活强度
-            isAfterburnActive = activity?.isAfterburnEnabled ?: false, // 是否处于后燃期
+            userProfile = getUserProfile(),
+            sleepHours = activity?.sleepHours ?: 8f,
+            intensity = activity?.intensity ?: LifeIntensity.NORMAL,
+            isAfterburnActive = activity?.isAfterburnEnabled ?: false,
             proteinGrams = (protein ?: 0.0).toFloat(),
-            targetTimestamp = System.currentTimeMillis() // ✅ 确保使用当前系统时间进行实时计算
+            targetTimestamp = System.currentTimeMillis()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BodyRegion.entries.associateWith { 1.0f })
 
-    /**
-     * 自动化后燃状态流。
-     *
-     * 基于 `bodyStatus` 的计算结果衍生而来。如果当前任意一个身体部位的恢复系数低于 0.5（例如深度疲劳），
-     * 则自动判定为处于“后燃效应”活跃状态 (true)，否则为 false。
-     * 这解决了手动设置后燃开关容易遗忘的问题。
-     */
+    /** 自动化后燃状态流 (基于 bodyStatus) */
     val isAfterburnAutoActive: StateFlow<Boolean> = bodyStatus
         .map { statusMap -> statusMap.values.any { it < 0.5f } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -375,42 +283,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // ==================== 用户资料与热量消耗计算 ====================
 
-    /**
-     * 从 SharedPreferences 中读取用户的基础资料（体重、身高、年龄、性别）。
-     * 包含对体重和身高单位的自动纠错逻辑（防止用户错误输入克或毫米）。
-     * @return UserProfile 对象
-     */
     private fun getUserProfile(): UserProfile {
         val sharedPref = getApplication<Application>().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         var weight = sharedPref.getString("weight", "70.0")?.toDoubleOrNull() ?: 70.0
         var height = sharedPref.getString("height", "180.0")?.toDoubleOrNull() ?: 180.0
-
-        // 自动纠正单位错误（如果是克或毫米）
         if (weight > 500) weight /= 1000
         if (height > 1000) height /= 10
-
         return UserProfile(weight, height,
             sharedPref.getString("age", "27")?.toIntOrNull() ?: 27,
             sharedPref.getString("gender", "男") ?: "男"
         )
     }
 
-    /**
-     * 计算今日的总热量消耗 (TDEE)。
-     *
-     * 基于用户的基础代谢率 (BMR)，结合当天的生活强度系数和后燃状态进行计算。
-     *
-     * @param activity 当天的活动记录对象。如果为空，则使用默认强度，并使用自动计算的后燃状态 (`isAfterburnAutoActive`)。
-     * @return 估算的每日总消耗热量 (Kcal)
-     */
+    /** 计算今日的总热量消耗 (TDEE) */
     fun getTodayExpenditure(activity: DailyActivity?): Int {
         val profile = getUserProfile()
-
         val bmr = HealthCalculator.calcBMR(profile)
-
-        // 使用自动检测的后燃状态。如果 activity 为空，默认参考当前 bodyStatus 算出的自动化值
         val afterburn = activity?.isAfterburnEnabled ?: isAfterburnAutoActive.value
-
         return HealthCalculator.calculateDailyExpenditure(
             bmr = bmr,
             intensity = activity?.intensity ?: LifeIntensity.NORMAL,
@@ -418,24 +307,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    /**
-     * 当用户在 UI 上确认修改了睡眠和强度时调用此方法。
-     * 它会使用当前自动计算的后燃状态 (`isAfterburnAutoActive`) 来更新数据库。
-     */
+    /** 确认修改每日活动状态 */
     fun onActivityConfirm(date: String, sleep: Float, intensity: LifeIntensity) {
-        // 直接调用更新逻辑，去掉了手动 afterburn 参数，改用自动值
         updateActivityForDate(date, sleep, intensity)
     }
 
-    /**
-     * 内部方法：更新指定日期的每日状态记录。
-     * 使用自动计算的后燃状态值。
-     */
     private fun updateActivityForDate(date: String, sleep: Float, intensity: LifeIntensity) {
         viewModelScope.launch(Dispatchers.IO) {
-            // ✅ 后燃开关改为自动判断逻辑：如果当前 bodyStatus 有部位 < 0.5，存入数据库时设为 true
             val autoAfterburn = isAfterburnAutoActive.value
-
             val record = DailyActivity(
                 date = date,
                 sleepHours = sleep,
@@ -446,27 +325,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-
-
-    /**
-     * 获取指定日期的每日活动状态流。
-     */
     fun getActivityForDate(date: String): Flow<DailyActivity?> =
         dailyActivityDao.getActivityByDate(date)
 
 
     // ==================== 饮食记录相关逻辑 ====================
 
-    /**
-     * 保存一条新的饮食记录到数据库。
-     * @param foodName 食物名称
-     * @param category 分类ID
-     * @param quantity 摄入量描述（如 "150g"）
-     * @param calories 热量 (kcal)
-     * @param protein 蛋白质 (g)
-     * @param carbs 碳水化合物 (g)
-     * @param date 日期字符串
-     */
     fun saveDietRecord(
         foodName: String, category: String, quantity: String,
         calories: Double, protein: Double, carbs: Double, date: String
@@ -481,64 +345,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** 获取指定日期的总摄入热量流 */
     fun getTotalCaloriesForDate(date: String): Flow<Double> =
         dietDao.getTotalCaloriesByDate(date).map { it ?: 0.0 }
 
-    /** 获取指定日期的总摄入蛋白质流 */
     fun getTotalProteinForDate(date: String): Flow<Double> =
         dietDao.getTotalProteinForDate(date).map { it ?: 0.0 }
 
-    /** 获取指定日期的总摄入碳水流 */
     fun getTotalCarbsForDate(date: String): Flow<Double> =
         dietDao.getTotalCarbsByDate(date).map { it ?: 0.0 }
 
-    /** 获取指定日期的所有饮食记录列表流 */
     fun getDietRecordsForDate(date: String): Flow<List<DietRecord>> =
         dietDao.getRecordsByDate(date)
 
-    /** 删除一条指定的饮食记录 */
     fun deleteDietRecord(record: DietRecord) {
         viewModelScope.launch(Dispatchers.IO) { dietDao.deleteRecord(record) }
     }
 
 
-    // ==================== 训练记录读取与旧版保存逻辑 ====================
+    // ==================== 训练记录读取 ====================
 
-    /**
-     * 获取指定日期范围内的所有训练子记录 (WorkoutSet)。
-     * 通过计算该日期的起始和结束时间戳来进行范围查询。
-     */
+    /** 获取指定日期范围内的所有训练子记录 */
     fun getSetsByDate(date: String): Flow<List<WorkoutSet>> {
         val localDate = java.time.LocalDate.parse(date)
-        // 计算当天的起始时间戳 (00:00:00)
         val start = localDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-        // 计算当天的结束时间戳 (23:59:59.999)
         val end = localDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
-        // 调用 Dao 里的范围查询
         return workoutDao.getSetsByTimeRange(start, end)
     }
 
 
     // ==================== 身体指标保存逻辑 ====================
 
-    /**
-     * 保存当前的体重和体脂率数据。
-     *
-     * 策略：为了数据整洁和图表展示方便，会将时间戳对齐到当前的**整点**（例如 14:35 保存，实际记录时间为 14:00:00）。
-     *
-     * @param weight 体重 (kg)
-     * @param bodyFat 体脂率 (%)
-     */
     fun saveBodyStat(weight: Float, bodyFat: Float) {
         viewModelScope.launch {
             val now = LocalDateTime.now()
-            // 设为整点：分钟0，秒0，纳秒0
             val onTheHour = now.withMinute(0).withSecond(0).withNano(0)
-
             val timestamp = onTheHour.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val dateStr = onTheHour.format(DateTimeFormatter.ofPattern("MM-dd"))
-
             val record = BodyStatRecord(
                 timestamp = timestamp,
                 weight = weight,
@@ -548,4 +390,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             dao.insertStat(record)
         }
     }
+
+    fun loadWorkoutDraftsForDate(dateString: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. 复用已有的方法获取当天的数据流，并取第一个值（相当于一次性查询）
+            // 使用 first() 会挂起直到获取到最新的一份数据列表
+            val sets = getSetsByDate(dateString).first()
+
+            // 2. 切换到主线程更新 UI 状态集合 (Compose 的状态必须在主线程更新)
+            withContext(Dispatchers.Main) {
+                // 先清空当前状态，防止残留
+                regionDraftState.clear()
+                // 遍历查询到的记录並填充状态
+                sets.forEach { set ->
+                    // 只处理部位记录 (在保存时我们将 exerciseId 设为了 "manual_region")
+                    if (set.exerciseId == "manual_region") {
+                        // 将数据库存储的 RPE 和 Note 重新放入 UI 状态 Map 中
+                        // 这样 UI 就能显示出之前保存的数据了
+                        // 使用 ?: 操作符处理空值。如果数据库里是 null，就用 0 和 "" 代替
+                        regionDraftState[set.region] = Pair(set.rpe ?: 0, set.note ?: "")
+                    }
+                }
+            }
+        }
+    }
+
 }
