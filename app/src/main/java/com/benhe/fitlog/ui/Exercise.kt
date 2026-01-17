@@ -1,5 +1,8 @@
 package com.benhe.fitlog.ui
 
+
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FitnessCenter
@@ -19,11 +23,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -99,16 +106,32 @@ fun GlassInput(
     }
 }
 
-// ==================== 核心組件：身體部位行 ====================
+// ✅ 新增：虚线边框修饰符（用于添加按钮）
+// ✅ 修改后的虚线边框修饰符
+fun Modifier.dashedBorder(width: Dp, color: Color, shape: Shape): Modifier = this.drawBehind {
+    val stroke = Stroke(
+        width = width.toPx(),
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)
+    )
+    val outline = shape.createOutline(size, layoutDirection, this)
+
+    // ✅ 修复点：使用命名参数 style = stroke
+    drawOutline(
+        outline = outline,
+        color = color,
+        style = stroke
+    )
+}
+//================== 核心組件：身體部位行 (小修改) ====================
 
 @Composable
 fun GlassBodyRegionRow(
     regionName: String,
     level: Int,
     note: String,
-    onLevelClick: () -> Unit, // 點擊切換等級
+    onLevelClick: () -> Unit,
     onNoteChange: (String) -> Unit,
-    onClear: () -> Unit
+    onRemove: () -> Unit // ✅ 修改：现在的含义是“移除”，而不是“清除数据”
 ) {
     Row(
         modifier = Modifier
@@ -117,7 +140,7 @@ fun GlassBodyRegionRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 1. 部位名稱 (靜態顯示)
+        // 1. 部位名稱
         GlassInput(
             value = regionName,
             onValueChange = {},
@@ -134,9 +157,9 @@ fun GlassBodyRegionRow(
         // 2. 等級徽章選擇器
         val isSelected = level > 0
         val backgroundStyle = if (isSelected) {
-            Brush.horizontalGradient(listOf(Sky500, Cyan500)) // 選中時的漸變背景
+            Brush.horizontalGradient(listOf(Sky500, Cyan500))
         } else {
-            SolidColor(Color.White.copy(alpha = 0.3f)) // 未選中時的半透明背景
+            SolidColor(Color.White.copy(alpha = 0.3f))
         }
         val textColor = if (isSelected) Color.White else TextSlate400
 
@@ -161,7 +184,7 @@ fun GlassBodyRegionRow(
                 if (isSelected) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(
-                        Icons.Outlined.Bolt, // 閃電圖標
+                        Icons.Outlined.Bolt,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(14.dp)
@@ -183,23 +206,18 @@ fun GlassBodyRegionRow(
             )
         )
 
-        // 4. 清除按鈕
-        val hasData = level > 0 || note.isNotEmpty()
+        // 4. 移除按钮 (X)
         IconButton(
-            onClick = onClear,
-            enabled = hasData,
+            onClick = onRemove,
             modifier = Modifier
                 .size(24.dp)
-                .background(
-                    if(hasData) Color.White.copy(alpha = 0.5f) else Color.Transparent,
-                    CircleShape
-                )
-                .border(1.dp, if(hasData) Color.White else Color.Transparent, CircleShape)
+                .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                .border(1.dp, Color.White, CircleShape)
         ) {
             Icon(
                 Icons.Default.Close,
-                contentDescription = "Clear",
-                tint = if (hasData) Rose400 else TextSlate400.copy(alpha = 0.3f),
+                contentDescription = "Remove",
+                tint = Rose400, // 移除通常用红色警示
                 modifier = Modifier.size(14.dp)
             )
         }
@@ -211,15 +229,67 @@ fun GlassBodyRegionRow(
 @Composable
 fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
     val scope = rememberCoroutineScope()
-
-    // --- 核心修改 1：直接使用 ViewModel 中的状态 ---
-    // 這樣狀態就能在頁面重建時保留，並在不同頁面間共享
     val regionState = viewModel.regionDraftState
 
-    // --- 核心修改 2：進入頁面時加載數據 ---
-    // 使用 LaunchedEffect 在 date 變化時（即進入新頁面時）從數據庫加載數據
+    // ✅ 新增：控制添加对话框显示的 State
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    // ✅ 新增：计算尚未添加的部位列表
+    // 通过过滤所有部位，找出不在 regionState 的 key 中的部位
+    val availableRegions = remember(regionState.size) {
+        BodyRegion.entries.filter { !regionState.containsKey(it) }
+    }
+
     LaunchedEffect(date) {
         viewModel.loadWorkoutDraftsForDate(date)
+    }
+
+    // --- 添加部位的对话框 ---
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = {
+                Text(
+                    "选择要添加的部位",
+                    fontWeight = FontWeight.Bold,
+                    color = TextSlate800
+                )
+            },
+            text = {
+                if (availableRegions.isEmpty()) {
+                    Text("所有部位已添加完毕", color = TextSlate600)
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(availableRegions) { region ->
+                            Button(
+                                onClick = {
+                                    // 点击后，向状态 Map 中添加该部位，使用默认空值
+                                    regionState[region] = Pair(0, "")
+                                    showAddDialog = false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Teal50.copy(alpha = 0.8f),
+                                    contentColor = Teal500
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(region.displayName, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text("关闭", color = TextSlate400)
+                }
+            },
+            containerColor = GlassWhite,
+            shape = RoundedCornerShape(24.dp)
+        )
     }
 
     Column(
@@ -251,7 +321,6 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
                 }
             }
             TextButton(onClick = {
-                // 清空 ViewModel 中的状态
                 regionState.clear()
             }) {
                 Text("清空全部", color = TextSlate400, fontSize = 12.sp)
@@ -277,12 +346,14 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
                     Text("詳細日誌", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextSlate800)
                 }
 
-                // 統一表頭
-                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
-                    Text("部位", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f))
-                    Text("等級", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f), textAlign = TextAlign.Center)
-                    Text("備註", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f))
-                    Spacer(modifier = Modifier.width(24.dp))
+                // 統一表頭 (如果列表为空则不显示)
+                if (regionState.isNotEmpty()) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
+                        Text("部位", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f))
+                        Text("等級", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f), textAlign = TextAlign.Center)
+                        Text("備註", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f))
+                        Spacer(modifier = Modifier.width(24.dp))
+                    }
                 }
 
                 // 列表內容
@@ -290,9 +361,9 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
                     modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    // --- 身體部位列表 ---
-                    items(BodyRegion.entries) { region ->
-                        // 直接從 ViewModel 的狀態中讀取
+                    // ✅ 修改：只遍历已经添加到状态中的部位 (regionState.keys)
+                    // 将 keys 转为 list 并排序，保证显示顺序稳定（例如按枚举定义顺序）
+                    items(regionState.keys.toList().sortedBy { it.ordinal }) { region ->
                         val state = regionState[region] ?: Pair(0, "")
                         val (level, note) = state
                         GlassBodyRegionRow(
@@ -300,34 +371,56 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
                             level = level,
                             note = note,
                             onLevelClick = {
-                                // 點擊循環切換等級 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 0
                                 val newLevel = if (level >= 5) 0 else level + 1
-                                // 直接更新 ViewModel 中的狀態
                                 regionState[region] = state.copy(first = newLevel)
                             },
                             onNoteChange = { newNote ->
-                                // 直接更新 ViewModel 中的狀態
                                 regionState[region] = state.copy(second = newNote)
                             },
-                            onClear = {
-                                // 直接更新 ViewModel 中的狀態
-                                regionState[region] = Pair(0, "")
+                            // ✅ 修改：点击 X 是从 Map 中彻底移除该部位
+                            onRemove = {
+                                regionState.remove(region)
                             }
                         )
                     }
+
+                    // ✅ 新增：底部的“添加部位”按钮（仿照截图样式）
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                // 使用自定义的虚线边框
+                                .dashedBorder(width = 1.dp, color = Teal500.copy(alpha = 0.5f), shape = RoundedCornerShape(24.dp))
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(Teal50.copy(alpha = 0.3f))
+                                .clickable {
+                                    // 点击打开对话框
+                                    showAddDialog = true
+                                }
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = Teal500)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("添加训练部位", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Teal500)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
                 }
 
-                // --- 底部保存按鈕 ---
+                // --- 底部保存按鈕 (保持不变) ---
                 Box(modifier = Modifier.padding(24.dp)) {
                     Button(
                         onClick = {
                             scope.launch {
-                                // 調用 ViewModel 方法保存，傳遞的 drafts 就是 ViewModel 自己的状态
                                 viewModel.syncWorkoutSets(
                                     dateString = date,
-                                    drafts = regionState.toMap() // 將 SnapshotStateMap 轉為普通 Map
+                                    drafts = regionState.toMap()
                                 )
-                                // 這裡可以添加一個 Toast 提示或者導航回上一頁
                             }
                         },
                         modifier = Modifier
