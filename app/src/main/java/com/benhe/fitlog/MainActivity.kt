@@ -68,6 +68,10 @@ object Routes {
     fun dietList(date: String) = "diet_list/$date"
     fun dietAdd(date: String) = "diet_add/$date"
     fun workoutSession(date: String) = "workout_session/$date"
+    const val HOME_WITH_DATE = "home/{date}"
+    fun homeWithDate(date: String) = "home/$date"
+    const val DAILY_STATUS_DIALOG = "daily_status_dialog/{date}"
+    fun dailyStatusDialog(date: String) = "daily_status_dialog/$date"
 }
 
 // ===================== 主界面容器 (仅包含导航逻辑) =====================
@@ -146,11 +150,15 @@ fun MainContainerScreen(viewModel: MainViewModel) {
             modifier = Modifier.padding(innerPadding)
         ) {
             // --- 底部导航页面 ---
+            // 在 NavHost 中更新调用：
+// 在 NavHost 中，找到 BottomNavItem.History.route 的部分
+
             composable(BottomNavItem.History.route) {
                 LeftStatsScreen(
                     viewModel = viewModel,
                     onNavigateToDiet = { date -> navController.navigate(Routes.dietList(date)) },
                     onNavigateToWorkout = { date -> navController.navigate(Routes.workoutSession(date)) }
+                    // ✅ 移除掉 onNavigateToStatus = { ... } 这行代码
                 )
             }
 
