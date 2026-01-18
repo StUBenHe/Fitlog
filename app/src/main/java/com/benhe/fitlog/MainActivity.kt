@@ -24,7 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.benhe.fitlog.ui.DietScreen
+import com.benhe.fitlog.ui.screens.DietScreen
 import com.benhe.fitlog.ui.History
 import com.benhe.fitlog.ui.ProfileScreen
 import com.benhe.fitlog.ui.RightProfileScreen

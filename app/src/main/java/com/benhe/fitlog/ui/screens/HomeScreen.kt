@@ -16,6 +16,8 @@ import com.benhe.fitlog.ui.components.DayCard
 import com.benhe.fitlog.util.DateUtils
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
+import com.benhe.fitlog.ui.theme.Emerald400
+import com.benhe.fitlog.ui.theme.Brand500
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -32,7 +34,7 @@ fun HomeScreen(
 
     Column(modifier = Modifier.fillMaxSize().padding(top = 16.dp, start = 16.dp, end = 16.dp)) {
         Text(
-            text = "今日状态",
+            text = "此日状态",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -41,7 +43,7 @@ fun HomeScreen(
         Text(
             text = "👋 你好，$name!",
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
+            color = Brand500
         )
         Spacer(Modifier.height(20.dp))
 

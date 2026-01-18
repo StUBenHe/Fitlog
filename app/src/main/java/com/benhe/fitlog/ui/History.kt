@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.benhe.fitlog.model.LifeIntensity
 import com.benhe.fitlog.ui.components.ActivityInputDialog
 import com.benhe.fitlog.ui.components.AppleStyleCalendar
-import com.benhe.fitlog.ui.components.StatsLineChart
+
+import com.benhe.fitlog.ui.components.StatsSummaryCard
 import com.benhe.fitlog.viewmodel.MainViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -40,7 +41,10 @@ fun History( // 假设您可能把 LeftStatsScreen 改名成了 HistoryScreen，
 ) {
     // 监听体重/体脂历史数据
     val historyData by viewModel.bodyStatHistory.collectAsState()
-
+    // ✅ 【新增】监听计算好的统计摘要数据
+    // 这两个变量会随着 ViewModel 中计算结果的更新而自动更新
+    val weightSummary by viewModel.weightSummary.collectAsState()
+    val bodyFatSummary by viewModel.bodyFatSummary.collectAsState()
     // ✅ 【修复核心】监听 ViewModel 中的经期数据流
     // 如果这里报错，请确保您完成了“第一步：重建项目”
     val pastPeriodDates by viewModel.pastPeriodDates.collectAsState(initial = emptySet())
@@ -102,28 +106,47 @@ fun History( // 假设您可能把 LeftStatsScreen 改名成了 HistoryScreen，
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
-                .padding(16.dp)
-        ) {
-            if (historyData.isNotEmpty()) {
-                StatsLineChart(data = historyData, isWeight = showWeight)
-            } else {
+        Spacer(Modifier.height(8.dp))
+
+        // ✅ 使用新的完整统计卡片组件，替代原来的 Box
+        // History.kt 的底部区域
+
+        Spacer(Modifier.height(8.dp))
+
+        // ✅ 使用新的完整统计卡片组件，替代原来的 Box
+        if (historyData.isNotEmpty()) {
+            // 1. 根据开关状态，决定使用哪一份统计摘要数据
+            val currentSummary = if (showWeight) weightSummary else bodyFatSummary
+
+            // 2. 准备图表数据
+            // 这里的 historyData 可能是全部历史数据。如果数据量非常大，
+            // 为了图表显示效果和性能，建议只取最近的一部分，例如最近 30 条记录。
+            // 如果 historyData 已经是 ViewModel 处理过的最近数据，则可以直接使用。
+            val chartData = historyData.takeLast(30) // 示例：只取最近30条用于绘图
+
+            StatsSummaryCard(
+                data = chartData,                  // 传入用于绘图的数据点
+                isWeight = showWeight,             // 告诉组件当前是体重还是体脂
+                // ✅ 【核心修改】这里不再使用假数据，而是使用从 ViewModel 监听到的真实数据
+                mainChangeValue = currentSummary.mainChangeValue,
+                comparisonPercentage = currentSummary.comparisonPercentage,
+                comparisonLabel = currentSummary.comparisonLabel
+            )
+        } else {
+            // 数据为空时的占位显示 (保持不变)
+            Box(
+                // ...
+            ) {
                 Text(
-                    text = "暂无数据，请在'状态'页记录体重",
-                    modifier = Modifier.align(Alignment.Center),
+                    text = "暂无数据，请在'状态'页记录体重/体脂",
                     color = Color.Gray,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
         }
-
-        Spacer(Modifier.height(80.dp))
     }
 
+        Spacer(Modifier.height(80.dp))
     // --- 第一个弹窗：操作选择菜单 ---
     if (showSelectionDialog) {
         val dateStr = selectedCalendarDate.toString() // yyyy-MM-dd
@@ -175,7 +198,7 @@ fun History( // 假设您可能把 LeftStatsScreen 改名成了 HistoryScreen，
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.filledTonalButtonColors()
                     ) {
-                        Text("记录今日状态")
+                        Text("补录当日状态")
                     }
                 }
             },

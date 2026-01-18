@@ -1,6 +1,20 @@
 package com.benhe.fitlog.viewmodel
 
+import androidx.compose.runtime.mutableStateOf // 如果用到的话
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+// 在 MainViewModel.kt 顶部的 imports 中添加
+import com.benhe.fitlog.util.BodyStatsCalculator
+import com.benhe.fitlog.util.BodyStatsSummary
+// ✅ 确保添加以下用于 StateFlow 和 日期计算 的导入
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
+import java.time.temporal.ChronoUnit
+import java.util.Locale
+import kotlin.math.abs
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import android.app.Application
@@ -414,5 +428,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+    // 在 MainViewModel 中
+// 在 MainViewModel 类内部
+
+    // --- 统计摘要状态流 ---
+    // 使用新定义在 util 包中的 BodyStatsSummary 数据类
+    private val _weightSummary = MutableStateFlow(BodyStatsSummary())
+    val weightSummary = _weightSummary.asStateFlow()
+
+    private val _bodyFatSummary = MutableStateFlow(BodyStatsSummary())
+    val bodyFatSummary = _bodyFatSummary.asStateFlow()
+
+    init {
+        // ... 你原有的其他初始化代码 ...
+
+        // 监听历史数据变化，并调用工具类进行计算
+        viewModelScope.launch {
+            // 假设 bodyStatHistory 已经按日期升序排好序
+            bodyStatHistory.collect { historyList ->
+                if (historyList.isNotEmpty()) {
+                    // 调用工具单例方法计算体重摘要
+                    _weightSummary.value = BodyStatsCalculator.calculateSummary(
+                        allRecords = historyList,
+                        isWeight = true
+                        // 可以选择传入自定义天数，例如 daysToCompare = 7
+                    )
+                    // 调用工具单例方法计算体脂摘要
+                    _bodyFatSummary.value = BodyStatsCalculator.calculateSummary(
+                        allRecords = historyList,
+                        isWeight = false
+                    )
+                } else {
+                    // 数据为空时重置
+                    _weightSummary.value = BodyStatsSummary()
+                    _bodyFatSummary.value = BodyStatsSummary()
+                }
+            }
+        }
+    }
+
+    // 【注意】请确保删除了 MainViewModel 中原来所有关于 calculateSummary 的私有函数代码，
+    // 以及之前定义在 ViewModel 内部或外部的旧的 BodyStatsSummary 数据类定义，
+    // 避免冲突声明错误。现在统一使用 util 包下的定义。
+
+
 
 }
