@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- 你原来的应用主题，保持不变 -->
     <style name="Theme.Fitlog" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- ================= 新增：专门的启动页主题 ================= -->
+    <!-- parent 必须指向 Theme.SplashScreen -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- 1. 设置启动页背景为你准备好的彩色背景图 -->
+        <item name="windowSplashScreenBackground">@drawable/splash_bg</item>
+
+        <!-- 2. 设置启动页中心的图标为透明 (因为我们要在 Compose 里自己做动画) -->
+        <!-- 也可以创建一个完全透明的 png 放在 drawable 里引用，这里直接用系统透明色 -->
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+
+        <!-- 3. 重要：设置启动结束后，App 应该切换回哪个主题 -->
+        <item name="postSplashScreenTheme">@style/Theme.Fitlog</item>
+    </style>
 </resources>

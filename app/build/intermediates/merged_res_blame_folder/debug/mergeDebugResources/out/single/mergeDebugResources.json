@@ -1,66 +1,106 @@
 [
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "com.benhe.fitlog.app-main-58:/drawable/ic_launcher_foreground.xml"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-anydpi_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-anydpi\\ic_launcher_round.xml"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-xxhdpi/ic_launcher_round.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xxxhdpi\\ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-hdpi_ic_launcher_round.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-hdpi/ic_launcher_round.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xhdpi\\ic_launcher.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-hdpi_ic_launcher.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-hdpi/ic_launcher.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xxhdpi\\ic_launcher_round.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-xhdpi_ic_launcher.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-xhdpi/ic_launcher.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-anydpi_ic_launcher.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-anydpi\\ic_launcher.xml"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/xml_backup_rules.xml.flat",
-        "source": "com.benhe.fitlog.app-main-58:/xml/backup_rules.xml"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\xml_backup_rules.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\xml\\backup_rules.xml"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-anydpi_ic_launcher.xml.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-anydpi/ic_launcher.xml"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-mdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-mdpi\\ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-mdpi_ic_launcher_round.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-mdpi/ic_launcher_round.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-hdpi\\ic_launcher.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-mdpi_ic_launcher.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-mdpi/ic_launcher.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-hdpi\\ic_launcher_round.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-xxxhdpi/ic_launcher_round.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xhdpi\\ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-anydpi_ic_launcher_round.xml.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-anydpi/ic_launcher_round.xml"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\xml_data_extraction_rules.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\xml\\data_extraction_rules.xml"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-xxxhdpi_ic_launcher.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-xxxhdpi/ic_launcher.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/xml_data_extraction_rules.xml.flat",
-        "source": "com.benhe.fitlog.app-main-58:/xml/data_extraction_rules.xml"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-mdpi\\ic_launcher_round.webp"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-xhdpi_ic_launcher_round.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-xhdpi/ic_launcher_round.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\drawable_splash_logo.png.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\drawable\\splash_logo.png"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/drawable_ic_launcher_background.xml.flat",
-        "source": "com.benhe.fitlog.app-main-58:/drawable/ic_launcher_background.xml"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\drawable_splash_bg.png.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\drawable\\splash_bg.png"
     },
     {
-        "merged": "com.benhe.fitlog.app-debug-56:/mipmap-xxhdpi_ic_launcher.webp.flat",
-        "source": "com.benhe.fitlog.app-main-58:/mipmap-xxhdpi/ic_launcher.webp"
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xxhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\drawable_ic_launcher_background.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-hdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-hdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xxxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xxhdpi\\ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.benhe.fitlog.app-debug-57:/drawable_splash_logo.png.flat",
+        "source": "com.benhe.fitlog.app-main-59:/drawable/splash_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-mdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-debug-57:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\benhe\\.gradle\\daemon\\8.13\\com.benhe.fitlog.app-main-59:\\mipmap-xxxhdpi\\ic_launcher.webp"
     }
 ]

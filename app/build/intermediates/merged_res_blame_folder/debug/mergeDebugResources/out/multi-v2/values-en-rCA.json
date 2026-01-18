@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.benhe.fitlog.app-mergeDebugResources-54:/values-en-rCA/values-en-rCA.xml",
+            "outputFile": "com.benhe.fitlog.app-mergeDebugResources-55:/values-en-rCA/values-en-rCA.xml",
             "map": [
                 {
                     "source": "C:\\Users\\benhe\\.gradle\\caches\\8.13\\transforms\\15d93400369dc5909d17f0714fbe69c7\\transformed\\core-1.12.0\\res\\values-en-rCA\\values-en-rCA.xml",
