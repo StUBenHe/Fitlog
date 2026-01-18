@@ -343,7 +343,7 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
                 ) {
                     Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = Teal500, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("詳細日誌", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextSlate800)
+                    Text("详细日志", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextSlate800)
                 }
 
                 // 統一表頭 (如果列表为空则不显示)
@@ -351,7 +351,7 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
                         Text("部位", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f))
                         Text("等級", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f), textAlign = TextAlign.Center)
-                        Text("備註", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f))
+                        Text("备注", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSlate400, modifier = Modifier.weight(2.5f))
                         Spacer(modifier = Modifier.width(24.dp))
                     }
                 }
@@ -438,7 +438,7 @@ fun WorkoutSessionScreen(date: String, viewModel: MainViewModel) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("保存記錄", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 1.sp)
+                                Text("保存记录", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 1.sp)
                             }
                         }
                     }
