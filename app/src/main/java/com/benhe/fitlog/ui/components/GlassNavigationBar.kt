@@ -59,11 +59,22 @@ fun GlassNavigationBar(navController: NavController) {
                     item = item,
                     isSelected = selected
                 ) {
+                    // ================== 修改区域开始 ==================
                     navController.navigate(item.route) {
-                        popUpTo(BottomNavItem.Home.route) { saveState = true }
+                        // 1. 弹出到 Home 路由，避免返回栈无限增长
+                        popUpTo(BottomNavItem.Home.route) {
+                            // ✅ 关键修改：设置为 false (或直接删除这一行，默认为 false)
+                            // 作用：离开当前 Tab 时，不保存其状态
+                            saveState = false
+                        }
+                        // 2. 避免同一个页面在栈顶被重复创建
                         launchSingleTop = true
-                        restoreState = true
+
+                        // ✅ 关键修改：设置为 false
+                        // 作用：点击 Tab 时，不恢复之前的状态，强制显示该 Tab 的起始页面
+                        restoreState = false
                     }
+                    // ================== 修改区域结束 ==================
                 }
             }
         }
